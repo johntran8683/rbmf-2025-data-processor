@@ -1,0 +1,12 @@
+services:
+  rbmf-processor:
+    build: .
+    container_name: rbmf-data-processor
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./.env:/app/.env
+    environment:
+      - PYTHONPATH=/app
+    command: python -m src.main
+    restart: unless-stopped
