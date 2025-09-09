@@ -169,6 +169,47 @@ class RBMFTransformer:
         logger.debug(f"No fuzzy match found for '{value}' in column '{column_name}' (threshold: {threshold}%)")
         return value
     
+    def _find_best_indicator_mapping(self, indicator_name: str, mappings: List[Dict[str, str]], threshold: int = 90) -> Optional[Dict[str, str]]:
+        """Find the best fuzzy match for an indicator name in the mappings.
+        
+        Args:
+            indicator_name: The indicator name to match
+            mappings: List of mapping dictionaries
+            threshold: Fuzzy matching threshold (0-100)
+            
+        Returns:
+            The best matching mapping dictionary or None if no match found
+        """
+        if not indicator_name or not isinstance(indicator_name, str):
+            return None
+        
+        # Filter mappings for Indicator name column
+        indicator_mappings = [m for m in mappings if m.get('column') == 'Indicator name']
+        
+        if not indicator_mappings:
+            return None
+        
+        best_match = None
+        best_score = 0
+        
+        for mapping in indicator_mappings:
+            original = mapping.get('original_value', '')
+            if not original:
+                continue
+                
+            # Calculate fuzzy match score
+            from fuzzywuzzy import fuzz
+            score = fuzz.ratio(indicator_name.strip(), original.strip())
+            
+            if score >= threshold and score > best_score:
+                best_match = mapping
+                best_score = score
+        
+        if best_match:
+            logger.info(f"Found indicator mapping: '{indicator_name}' -> '{best_match.get('new_value', '')}' (score: {best_score}%)")
+        
+        return best_match
+    
     def _apply_column_mapping(self, df: pd.DataFrame, mappings: List[Dict[str, str]]) -> pd.DataFrame:
         """Apply column value mappings to a DataFrame.
         
@@ -191,12 +232,25 @@ class RBMFTransformer:
                 lambda x: self._fuzzy_match_value(x, mappings, 'Strategic Outcome')
             )
         
-        # Apply mappings to Indicator name column
+        # Apply mappings to Indicator name and Indicator ID columns together
         if 'Indicator name' in df_mapped.columns:
-            logger.info("Applying mappings to Indicator name column")
-            df_mapped['Indicator name'] = df_mapped['Indicator name'].apply(
-                lambda x: self._fuzzy_match_value(x, mappings, 'Indicator name')
-            )
+            logger.info("Applying mappings to Indicator name and Indicator ID columns")
+            
+            # Process each row to update both Indicator name and Indicator ID
+            for idx, row in df_mapped.iterrows():
+                indicator_name = row['Indicator name']
+                if indicator_name and isinstance(indicator_name, str):
+                    # Find the best match for the indicator name
+                    best_match = self._find_best_indicator_mapping(indicator_name, mappings)
+                    
+                    if best_match:
+                        # Update Indicator name
+                        df_mapped.at[idx, 'Indicator name'] = best_match['new_value']
+                        
+                        # Update Indicator ID if the column exists and we have a new indicator ID
+                        if 'Indicator ID' in df_mapped.columns and best_match.get('new_indicator_id'):
+                            df_mapped.at[idx, 'Indicator ID'] = best_match['new_indicator_id']
+                            logger.info(f"Updated Indicator ID: {row.get('Indicator ID', 'N/A')} -> {best_match['new_indicator_id']}")
         
         return df_mapped
     
