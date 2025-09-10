@@ -202,9 +202,11 @@ def process(data_dir: Path, output_file: str):
               help='Show interactive folder selection menu')
 @click.option('--steps', is_flag=True, 
               help='Create intermediate tabs (RBMF_1, RBMF_2) for verification')
+@click.option('--filter', is_flag=True, 
+              help='Apply filtering to RBMF tab based on Strategic Outcome + Indicator name groups')
 @click.option('--report-file', default='transformation_report.json', 
               help='Output report file name')
-def transform(data_dir: Path, folders: tuple, interactive: bool, steps: bool, report_file: str):
+def transform(data_dir: Path, folders: tuple, interactive: bool, steps: bool, filter: bool, report_file: str):
     """Transform RBMF data from quarterly to half-yearly format.
     
     Default: Creates Instructions + RBMF tabs only (efficient for production)
@@ -213,7 +215,12 @@ def transform(data_dir: Path, folders: tuple, interactive: bool, steps: bool, re
     --interactive: Show interactive folder selection menu
     """
     try:
-        mode_desc = "with intermediate steps" if steps else "final only"
+        if steps:
+            mode_desc = "with intermediate steps"
+        elif filter:
+            mode_desc = "with filtering applied"
+        else:
+            mode_desc = "final only"
         logger.info(f"Starting RBMF data transformation ({mode_desc}) from: {data_dir}")
         
         # Determine target folders
@@ -249,20 +256,44 @@ def transform(data_dir: Path, folders: tuple, interactive: bool, steps: bool, re
         transformer.load_template_instructions()
         
         # Create output structure
-        transformer.create_output_structure()
+        if steps:
+            output_mode = "steps"
+        elif filter:
+            output_mode = "final-filter"
+        else:
+            output_mode = "final"
+        
+        transformer.create_output_structure(output_mode)
         
         # Process each target folder
+        # Determine mode description
+        if steps:
+            mode_desc = 'steps'
+        elif filter:
+            mode_desc = 'final-filter'
+        else:
+            mode_desc = 'final'
+        
         results = {
             'total_files': 0,
             'created_files': 0,
             'failed_files': 0,
-            'mode': 'steps' if steps else 'final',
+            'mode': mode_desc,
             'folder_results': {}
         }
         
         for folder_name in transformer.target_folders:
             source_folder = transformer.data_dir / folder_name
-            output_folder = transformer.output_dir / folder_name / ("steps" if steps else "final")
+            
+            # Determine output folder name
+            if steps:
+                output_folder_name = "steps"
+            elif filter:
+                output_folder_name = "final-filter"
+            else:
+                output_folder_name = "final"
+            
+            output_folder = transformer.output_dir / folder_name / output_folder_name
             
             if not source_folder.exists():
                 logger.warning(f"Source folder does not exist: {source_folder}")
@@ -287,7 +318,7 @@ def transform(data_dir: Path, folders: tuple, interactive: bool, steps: bool, re
                         output_file = output_folder / file_path.name
                         
                         # Create output file
-                        success = transformer.create_output_file(file_path, output_file)
+                        success = transformer.create_output_file(file_path, output_file, apply_filter=filter)
                         
                         file_result = {
                             'file_name': file_path.name,

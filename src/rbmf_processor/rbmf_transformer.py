@@ -463,13 +463,19 @@ class RBMFTransformer:
             logger.error(f"Error loading template workbook: {e}")
             raise ValueError(f"Could not load template workbook: {e}")
     
-    def create_output_structure(self) -> None:
-        """Create the 2025-output folder structure and clean existing files."""
+    def create_output_structure(self, output_mode: str = None) -> None:
+        """Create the 2025-output folder structure and clean existing files.
+        
+        Args:
+            output_mode: Output mode ('steps', 'final', 'final-filter'). If None, uses include_steps flag.
+        """
         self.output_dir.mkdir(exist_ok=True)
         
         for folder in self.target_folders:
             # Create subfolder based on mode
-            if self.include_steps:
+            if output_mode:
+                folder_path = self.output_dir / folder / output_mode
+            elif self.include_steps:
                 folder_path = self.output_dir / folder / "steps"
             else:
                 folder_path = self.output_dir / folder / "final"
@@ -486,7 +492,7 @@ class RBMFTransformer:
                         except Exception as e:
                             logger.warning(f"Could not delete {file_path.name}: {e}")
             
-            mode_name = "steps" if self.include_steps else "final"
+            mode_name = output_mode or ("steps" if self.include_steps else "final")
             logger.info(f"Created/cleaned {mode_name} output folder: {folder_path}")
     
     def create_instructions_only_file(self, output_file: Path) -> bool:
@@ -901,12 +907,13 @@ class RBMFTransformer:
             logger.error(f"Error loading template RBMF structure: {e}")
             return pd.DataFrame()
     
-    def create_output_file(self, source_file: Path, output_file: Path) -> bool:
+    def create_output_file(self, source_file: Path, output_file: Path, apply_filter: bool = False) -> bool:
         """Create output file with Instructions and RBMF_Final tabs, optionally including intermediate steps.
         
         Args:
             source_file: Path to the source file
             output_file: Path for the output file
+            apply_filter: Whether to apply filtering to RBMF tab data
             
         Returns:
             True if successful, False otherwise
@@ -944,6 +951,11 @@ class RBMFTransformer:
             if rbmf_final_df.empty:
                 logger.warning(f"No RBMF_Final data created for {source_file.name}")
                 return False
+            
+            # Apply filtering if requested
+            if apply_filter:
+                rbmf_final_df = self._apply_rbmf_filtering(rbmf_final_df)
+                logger.info(f"Applied filtering to RBMF_Final data: {len(rbmf_final_df)} rows remaining")
             
             # Extract header style from source RBMF sheet (if available)
             header_style = self._extract_rbmf_header_style(source_file)
@@ -992,34 +1004,16 @@ class RBMFTransformer:
                     temp_created_for_copy = True
 
                 source_wb = openpyxl.load_workbook(path_to_open)
-                # First, try copying Overview from source (preferred)
+                # Transform Overview tab using 5-table mapping algorithm
                 try:
-                    if 'Overview' in source_wb.sheetnames:
-                        ws_overview = wb.create_sheet("Overview")
-                        self._copy_worksheet_with_formatting(source_wb['Overview'], ws_overview)
-                        # Clear data and colors from cells E8:H11
-                        self._clear_cell_range(ws_overview, 'E8:H11')
-                        # Hide borders on empty cells
-                        self._hide_borders_on_empty_cells(ws_overview)
-                        logger.info("Copied Overview tab from source, cleared cells E8:H11, and hid borders on empty cells")
-                        copied_overview = True
+                    copied_overview = self._transform_overview_tab(source_wb, template_wb, wb, rbmf_final_df)
+                    if copied_overview:
+                        logger.info("Successfully transformed Overview tab using 5-table mapping algorithm")
+                    else:
+                        logger.warning("Failed to transform Overview tab")
                 except Exception as e:
-                    logger.warning(f"Failed to copy Overview from source: {e}")
-
-                # If no Overview copied from source, fallback to template
-                if not copied_overview:
-                    try:
-                        if 'Overview' in template_wb.sheetnames:
-                            ws_overview = wb.create_sheet("Overview")
-                            self._copy_worksheet_with_formatting(template_wb['Overview'], ws_overview)
-                            # Hide borders on empty cells
-                            self._hide_borders_on_empty_cells(ws_overview)
-                            logger.info("Copied Overview tab with formatting from template (fallback) and hid borders on empty cells")
-                            copied_overview = True
-                        else:
-                            logger.warning("Neither source nor template contains an 'Overview' sheet; skipping Overview")
-                    except Exception as e:
-                        logger.warning(f"Failed to copy Overview from template fallback: {e}")
+                    logger.warning(f"Failed to transform Overview tab: {e}")
+                    copied_overview = False
 
                 for sheet_name in source_wb.sheetnames:
                     # Skip RBMF and Instructions. Always skip Overview (we copy it from template)
@@ -1296,6 +1290,589 @@ class RBMFTransformer:
         except Exception as e:
             logger.error(f"Error hiding borders on empty cells: {e}")
             raise
+    
+    def _transform_overview_tab(self, source_wb, template_wb, wb, rbmf_final_df=None):
+        """
+        Transform Overview tab from source to 2025 template format using 5-table mapping algorithm.
+        
+        Args:
+            source_wb: Source workbook (original RBMF file)
+            template_wb: Template workbook (2025 template)
+            wb: Target workbook (final output file)
+            rbmf_final_df: DataFrame with RBMF_Final data for Project ID and Strategic Outcome mapping
+        
+        Returns:
+            bool: True if Overview tab was successfully created, False otherwise
+        """
+        try:
+            # Check if source has Overview tab
+            if 'Overview' not in source_wb.sheetnames:
+                logger.warning("Source file does not contain Overview tab")
+                return False
+            
+            # Check if template has Overview tab
+            if 'Overview' not in template_wb.sheetnames:
+                logger.warning("Template file does not contain Overview tab")
+                return False
+            
+            # Read Overview data from source and template worksheets
+            source_ws = source_wb['Overview']
+            template_ws = template_wb['Overview']
+            
+            # Convert worksheets to DataFrames
+            source_data = []
+            for row in source_ws.iter_rows(values_only=True):
+                source_data.append(row)
+            source_df = pd.DataFrame(source_data)
+            
+            template_data = []
+            for row in template_ws.iter_rows(values_only=True):
+                template_data.append(row)
+            template_df = pd.DataFrame(template_data)
+            
+            logger.info("Starting Overview tab transformation using 5-table mapping algorithm")
+            
+            # Create output dataframe starting with template
+            df_output = template_df.copy()
+            
+            # Note: Dynamic row expansion will be handled in _map_table_5_stakeholder_quotes
+            # based on actual stakeholder count found in the original file
+            
+            # Map all 5 tables
+            self._map_table_1_general_overview(source_df, df_output)
+            self._map_table_2_project_overview(source_df, df_output)
+            self._map_table_3_implementation_partner(source_df, df_output)
+            self._map_table_4_project_stakeholders(source_df, df_output)
+            self._map_table_5_stakeholder_quotes(source_df, df_output)
+            
+            # Map RBMF data to Overview tab fields
+            if rbmf_final_df is not None and not rbmf_final_df.empty:
+                self._map_rbmf_data_to_overview(rbmf_final_df, df_output)
+            
+            # Create Overview sheet in target workbook
+            ws_overview = wb.create_sheet("Overview")
+            
+            # Write transformed data to the sheet
+            for row_idx, row in df_output.iterrows():
+                for col_idx, value in enumerate(row):
+                    if pd.notna(value) and str(value).strip():
+                        ws_overview.cell(row=row_idx + 1, column=col_idx + 1, value=str(value))
+            
+            # Apply formatting from template
+            self._copy_worksheet_formatting(template_wb['Overview'], ws_overview)
+            
+            # Auto-adjust row heights to fit content
+            self._auto_adjust_row_heights(ws_overview)
+            
+            # Auto-adjust column widths to fit content
+            self._auto_adjust_column_widths(ws_overview)
+            
+            logger.info("Successfully transformed Overview tab using 5-table mapping algorithm")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to transform Overview tab: {e}")
+            return False
+    
+    def _map_table_1_general_overview(self, df_original: pd.DataFrame, df_output: pd.DataFrame):
+        """Map Table 1: General Overview Section (Left Side)"""
+        try:
+            # Row 0: Section header
+            df_output.iloc[0, 0] = df_original.iloc[0, 0]  # "General Overview"
+            
+            # Row 1: Country
+            df_output.iloc[1, 0] = "Country"
+            df_output.iloc[1, 1] = df_original.iloc[2, 1]  # "Indonesia"
+            
+            # Row 2: Project Name
+            df_output.iloc[2, 0] = "Project Name"
+            df_output.iloc[2, 1] = df_original.iloc[3, 1]  # Full project name
+            
+            # Row 3: Project ID
+            df_output.iloc[3, 0] = "Project ID"
+            df_output.iloc[3, 1] = ""  # Not present in original
+            
+            # Row 4: Implementing Partner
+            df_output.iloc[4, 0] = "Implementing Partner/Retainer Name"
+            df_output.iloc[4, 1] = df_original.iloc[1, 1]  # "Aquatera"
+            
+            # Row 5: Implementation period
+            df_output.iloc[5, 0] = "Implementation period"
+            period = df_original.iloc[5, 1]  # "July 2024 - November 2025"
+            if ' - ' in period:
+                from_date, to_date = period.split(' - ')
+                df_output.iloc[5, 1] = from_date.strip()
+                df_output.iloc[5, 2] = to_date.strip()
+            
+            # Row 6: Post Implementation Monitoring
+            df_output.iloc[6, 0] = "Post Implementation Monitoring"
+            df_output.iloc[6, 1] = ""  # Not present in original
+            
+            logger.info("✓ Table 1 (General Overview) mapped successfully")
+        except Exception as e:
+            logger.warning(f"Failed to map Table 1: {e}")
+    
+    def _map_table_2_project_overview(self, df_original: pd.DataFrame, df_output: pd.DataFrame):
+        """Map Table 2: Project Overview Section (Right Side)"""
+        try:
+            # Row 0: Section header
+            df_output.iloc[0, 4] = df_original.iloc[0, 4]  # "Project overview"
+            
+            # Row 1: Primary strategic outcome
+            df_output.iloc[1, 4] = "Primary strategic outcome"
+            df_output.iloc[1, 5] = df_original.iloc[1, 5]  # "SO4 - Knowledge and Awareness Building"
+            
+            # Row 2: Impact
+            df_output.iloc[2, 4] = "Impact"
+            df_output.iloc[2, 5] = df_original.iloc[2, 5]  # Impact description
+            
+            # Row 3: Outcome
+            df_output.iloc[3, 4] = "Outcome"
+            df_output.iloc[3, 5] = df_original.iloc[3, 5]  # Outcome description
+            
+            # Row 4: Output
+            df_output.iloc[4, 4] = "Output"
+            df_output.iloc[4, 5] = df_original.iloc[4, 5]  # Output description
+            
+            logger.info("✓ Table 2 (Project Overview) mapped successfully")
+        except Exception as e:
+            logger.warning(f"Failed to map Table 2: {e}")
+    
+    def _map_table_3_implementation_partner(self, df_original: pd.DataFrame, df_output: pd.DataFrame):
+        """Map Table 3: Implementation Partner Overview Table"""
+        try:
+            # Row 8: Section header
+            df_output.iloc[8, 0] = df_original.iloc[7, 0]  # "Implementation Partner Overview"
+            
+            # Row 9: Table header
+            df_output.iloc[9, 0] = df_original.iloc[8, 0]  # "Implementation Partner"
+            df_output.iloc[9, 1] = df_original.iloc[8, 1]  # "Total"
+            df_output.iloc[9, 2] = df_original.iloc[8, 2]  # "Female"
+            
+            # Row 10: Project Team
+            df_output.iloc[10, 0] = df_original.iloc[9, 0]  # "Project Team"
+            df_output.iloc[10, 1] = df_original.iloc[9, 1]  # "17"
+            df_output.iloc[10, 2] = df_original.iloc[9, 2]  # "9"
+            
+            # Row 11: Number of Founders
+            df_output.iloc[11, 0] = df_original.iloc[10, 0]  # "Number of Founders"
+            df_output.iloc[11, 1] = df_original.iloc[10, 1]  # "1"
+            df_output.iloc[11, 2] = df_original.iloc[10, 2]  # "0"
+            
+            # Row 12: Senior Management
+            df_output.iloc[12, 0] = df_original.iloc[11, 0]  # "Senior Management"
+            df_output.iloc[12, 1] = df_original.iloc[11, 1]  # "5 Directors"
+            df_output.iloc[12, 2] = df_original.iloc[11, 2]  # "2"
+            
+            logger.info("✓ Table 3 (Implementation Partner) mapped successfully")
+        except Exception as e:
+            logger.warning(f"Failed to map Table 3: {e}")
+    
+    def _map_table_4_project_stakeholders(self, df_original: pd.DataFrame, df_output: pd.DataFrame):
+        """Map Table 4: Project Stakeholders Table"""
+        try:
+            # Row 14: Section header
+            df_output.iloc[14, 0] = df_original.iloc[13, 0]  # "Project Stakeholders"
+            df_output.iloc[14, 4] = df_original.iloc[13, 4]  # "Project Stakeholders/Beneficiary Quotes"
+            
+            # Row 15: Table header
+            df_output.iloc[15, 0] = df_original.iloc[14, 0]  # "Stakeholder Name"
+            df_output.iloc[15, 1] = df_original.iloc[14, 1]  # "Department/Organisation Name"
+            df_output.iloc[15, 2] = df_original.iloc[14, 2]  # "Position"
+            df_output.iloc[15, 4] = df_original.iloc[14, 4]  # "Stakeholder/Beneficiary Name"
+            df_output.iloc[15, 5] = df_original.iloc[14, 5]  # "Department/Organisation Name"
+            df_output.iloc[15, 6] = df_original.iloc[14, 6]  # "Position"
+            df_output.iloc[15, 7] = df_original.iloc[14, 7]  # "Quote"
+            
+            logger.info("✓ Table 4 (Project Stakeholders) mapped successfully")
+        except Exception as e:
+            logger.warning(f"Failed to map Table 4: {e}")
+    
+    def _map_table_5_stakeholder_quotes(self, df_original: pd.DataFrame, df_output: pd.DataFrame):
+        """Map Table 5: Project Stakeholders/Beneficiary Quotes Table - DYNAMIC VERSION"""
+        try:
+            # Dynamically find stakeholder data range in original file
+            stakeholder_rows = self._find_stakeholder_data_rows(df_original)
+            
+            if not stakeholder_rows:
+                logger.warning("No stakeholder data found in original file")
+                return
+            
+            logger.info(f"Found {len(stakeholder_rows)} stakeholder rows: {stakeholder_rows}")
+            
+            # Ensure we have enough rows in output template
+            self._ensure_enough_template_rows(df_output, len(stakeholder_rows))
+            
+            # Copy stakeholder data rows to BOTH sides (left and right)
+            template_row = 16  # Start after headers
+            for orig_row in stakeholder_rows:
+                if orig_row < len(df_original) and template_row < len(df_output):
+                    # Copy stakeholder data to LEFT side (columns 0-2)
+                    df_output.iloc[template_row, 0] = df_original.iloc[orig_row, 0]  # Name
+                    df_output.iloc[template_row, 1] = df_original.iloc[orig_row, 1]  # Department
+                    df_output.iloc[template_row, 2] = df_original.iloc[orig_row, 2]  # Position
+                    
+                    # Copy stakeholder data to RIGHT side (columns 4-6)
+                    df_output.iloc[template_row, 4] = df_original.iloc[orig_row, 0]  # Name
+                    df_output.iloc[template_row, 5] = df_original.iloc[orig_row, 1]  # Department
+                    df_output.iloc[template_row, 6] = df_original.iloc[orig_row, 2]  # Position
+                    df_output.iloc[template_row, 7] = df_original.iloc[orig_row, 7] if orig_row < len(df_original) and len(df_original.columns) > 7 else ""  # Quote
+                    template_row += 1
+            
+            logger.info(f"✓ Table 5 (Stakeholder Quotes) mapped successfully - {len(stakeholder_rows)} stakeholders")
+        except Exception as e:
+            logger.warning(f"Failed to map Table 5: {e}")
+    
+    def _find_stakeholder_data_rows(self, df_original: pd.DataFrame) -> list:
+        """Dynamically find rows containing stakeholder data in the original file."""
+        stakeholder_rows = []
+        
+        try:
+            # Look for stakeholder data starting from row 15 (after headers)
+            for row_idx in range(15, len(df_original)):
+                row = df_original.iloc[row_idx]
+                
+                # Check if this row has stakeholder data (name in column 0)
+                name = row.iloc[0] if len(row) > 0 else None
+                if pd.notna(name) and isinstance(name, str) and name.strip():
+                    # Additional validation: check if it looks like a person's name
+                    # (not a header, not empty, not a section title)
+                    if not any(keyword in name.lower() for keyword in ['stakeholder', 'department', 'position', 'quote', 'project']):
+                        stakeholder_rows.append(row_idx)
+                    else:
+                        # Stop if we hit another header/section
+                        break
+                else:
+                    # Stop if we hit an empty row
+                    break
+            
+            logger.info(f"Dynamic stakeholder detection found {len(stakeholder_rows)} stakeholder rows")
+            return stakeholder_rows
+            
+        except Exception as e:
+            logger.warning(f"Error in dynamic stakeholder detection: {e}")
+            return []
+    
+    def _ensure_enough_template_rows(self, df_output: pd.DataFrame, stakeholder_count: int):
+        """Ensure the template has enough rows for all stakeholders."""
+        try:
+            # Calculate how many rows we need (header + stakeholder rows)
+            needed_rows = 16 + stakeholder_count  # 16 = rows 0-15 (headers and sections)
+            
+            # Add rows if needed
+            while len(df_output) < needed_rows:
+                import numpy as np
+                new_row = pd.Series([np.nan] * len(df_output.columns))
+                df_output = pd.concat([df_output, new_row.to_frame().T], ignore_index=True)
+            
+            logger.info(f"Ensured template has {len(df_output)} rows for {stakeholder_count} stakeholders")
+            
+        except Exception as e:
+            logger.warning(f"Error ensuring template rows: {e}")
+    
+    def _map_rbmf_data_to_overview(self, rbmf_final_df: pd.DataFrame, df_output: pd.DataFrame):
+        """Map Project ID and Strategic Outcome from RBMF data to Overview tab fields.
+        
+        Args:
+            rbmf_final_df: DataFrame with RBMF_Final data
+            df_output: Output DataFrame for Overview tab
+        """
+        try:
+            if rbmf_final_df.empty:
+                logger.warning("RBMF_Final data is empty, cannot map to Overview")
+                return
+            
+            # Extract Project ID from first row
+            if 'Project ID' in rbmf_final_df.columns:
+                project_id = rbmf_final_df.iloc[0]['Project ID']
+                if pd.notna(project_id) and str(project_id).strip():
+                    # Find Project ID field in Overview tab and populate the cell to its right
+                    # Based on 2025 template structure, Project ID is typically around row 2-3
+                    for row_idx in range(len(df_output)):
+                        for col_idx in range(len(df_output.columns)):
+                            cell_value = df_output.iloc[row_idx, col_idx]
+                            if pd.notna(cell_value) and 'Project ID' in str(cell_value):
+                                # Fill the cell to the right
+                                if col_idx + 1 < len(df_output.columns):
+                                    df_output.iloc[row_idx, col_idx + 1] = str(project_id)
+                                    logger.info(f"Mapped Project ID '{project_id}' to Overview tab")
+                                break
+            
+            # Extract Strategic Outcome from first row
+            if 'Strategic Outcome' in rbmf_final_df.columns:
+                strategic_outcome = rbmf_final_df.iloc[0]['Strategic Outcome']
+                if pd.notna(strategic_outcome) and str(strategic_outcome).strip():
+                    # Find Primary strategic outcome field in Overview tab and replace its value
+                    for row_idx in range(len(df_output)):
+                        for col_idx in range(len(df_output.columns)):
+                            cell_value = df_output.iloc[row_idx, col_idx]
+                            if pd.notna(cell_value) and 'Primary strategic outcome' in str(cell_value):
+                                # Replace the cell to the right
+                                if col_idx + 1 < len(df_output.columns):
+                                    df_output.iloc[row_idx, col_idx + 1] = str(strategic_outcome)
+                                    logger.info(f"Mapped Strategic Outcome '{strategic_outcome}' to Overview tab")
+                                break
+            
+            logger.info("✓ RBMF data mapped to Overview tab successfully")
+            
+        except Exception as e:
+            logger.warning(f"Failed to map RBMF data to Overview: {e}")
+    
+    def _apply_rbmf_filtering(self, rbmf_final_df: pd.DataFrame) -> pd.DataFrame:
+        """Apply filtering logic to RBMF_Final data based on Strategic Outcome + Indicator name groups.
+        
+        Args:
+            rbmf_final_df: DataFrame with RBMF_Final data
+            
+        Returns:
+            Filtered DataFrame
+        """
+        try:
+            if rbmf_final_df.empty:
+                logger.warning("RBMF_Final data is empty, cannot apply filtering")
+                return rbmf_final_df
+            
+            # Check required columns exist
+            required_columns = ['Strategic Outcome', 'Indicator name', 'Periodical Target', 'Target Reporting Cycle']
+            missing_columns = [col for col in required_columns if col not in rbmf_final_df.columns]
+            if missing_columns:
+                logger.warning(f"Missing required columns for filtering: {missing_columns}")
+                return rbmf_final_df
+            
+            logger.info("Starting RBMF filtering process")
+            
+            # Group by Strategic Outcome + Indicator name
+            grouped = rbmf_final_df.groupby(['Strategic Outcome', 'Indicator name'])
+            
+            filtered_rows = []
+            
+            for (strategic_outcome, indicator_name), group_df in grouped:
+                logger.debug(f"Processing group: {strategic_outcome} + {indicator_name} ({len(group_df)} rows)")
+                
+                # Convert Periodical Target to numeric, handling any non-numeric values
+                group_df = group_df.copy()
+                group_df['Periodical Target'] = pd.to_numeric(group_df['Periodical Target'], errors='coerce')
+                
+                # Priority 1: Check if any row has Periodical Target > 0
+                rows_with_target = group_df[group_df['Periodical Target'] > 0]
+                
+                if not rows_with_target.empty:
+                    # Keep only rows with Periodical Target > 0
+                    filtered_rows.append(rows_with_target)
+                    logger.debug(f"  → Kept {len(rows_with_target)} rows with Periodical Target > 0")
+                else:
+                    # Priority 2: All rows have Periodical Target = 0, keep most recent Target Reporting Cycle
+                    most_recent_row = self._find_most_recent_reporting_cycle(group_df)
+                    if most_recent_row is not None:
+                        filtered_rows.append(most_recent_row)
+                        logger.debug(f"  → Kept 1 row with most recent Target Reporting Cycle: {most_recent_row.iloc[0]['Target Reporting Cycle']}")
+                    else:
+                        logger.warning(f"  → No valid row found for group: {strategic_outcome} + {indicator_name}")
+            
+            if filtered_rows:
+                result_df = pd.concat(filtered_rows, ignore_index=True)
+                logger.info(f"✓ RBMF filtering completed: {len(rbmf_final_df)} → {len(result_df)} rows")
+                return result_df
+            else:
+                logger.warning("No rows remained after filtering")
+                return pd.DataFrame()
+                
+        except Exception as e:
+            logger.error(f"Error applying RBMF filtering: {e}")
+            return rbmf_final_df
+    
+    def _find_most_recent_reporting_cycle(self, group_df: pd.DataFrame) -> pd.DataFrame:
+        """Find the row with the most recent Target Reporting Cycle.
+        
+        Args:
+            group_df: DataFrame for a single group
+            
+        Returns:
+            DataFrame with the most recent row, or None if no valid row found
+        """
+        try:
+            # Parse Target Reporting Cycle to extract year and half
+            def parse_reporting_cycle(cycle_str):
+                if pd.isna(cycle_str) or not isinstance(cycle_str, str):
+                    return (0, 0)  # Invalid cycle
+                
+                cycle_str = str(cycle_str).strip()
+                # Expected format: "2025H2", "2025H1", "2024H2", etc.
+                if len(cycle_str) >= 6 and cycle_str[-2:] in ['H1', 'H2']:
+                    try:
+                        year = int(cycle_str[:-2])
+                        half = int(cycle_str[-1])  # 1 or 2
+                        return (year, half)
+                    except ValueError:
+                        return (0, 0)
+                return (0, 0)
+            
+            # Add parsed cycle info
+            group_df = group_df.copy()
+            group_df['_parsed_cycle'] = group_df['Target Reporting Cycle'].apply(parse_reporting_cycle)
+            group_df['_year'] = group_df['_parsed_cycle'].apply(lambda x: x[0])
+            group_df['_half'] = group_df['_parsed_cycle'].apply(lambda x: x[1])
+            
+            # Filter out invalid cycles
+            valid_rows = group_df[(group_df['_year'] > 0) & (group_df['_half'] > 0)]
+            
+            if valid_rows.empty:
+                logger.warning("No valid Target Reporting Cycle found in group")
+                return None
+            
+            # Sort by year (descending) then by half (descending) to get most recent first
+            sorted_rows = valid_rows.sort_values(['_year', '_half'], ascending=[False, False])
+            most_recent = sorted_rows.iloc[[0]]  # Keep as DataFrame
+            
+            # Remove temporary columns
+            most_recent = most_recent.drop(columns=['_parsed_cycle', '_year', '_half'])
+            
+            return most_recent
+            
+        except Exception as e:
+            logger.error(f"Error finding most recent reporting cycle: {e}")
+            return None
+    
+    def _copy_worksheet_formatting(self, source_ws, target_ws):
+        """Copy formatting from source worksheet to target worksheet."""
+        try:
+            from copy import copy
+            
+            # Copy column widths
+            for col_idx, column_dimension in source_ws.column_dimensions.items():
+                target_ws.column_dimensions[col_idx].width = column_dimension.width
+            
+            # Copy row heights
+            for row_idx, row_dimension in source_ws.row_dimensions.items():
+                target_ws.row_dimensions[row_idx].height = row_dimension.height
+            
+            # Copy cell formatting for all cells (including empty ones)
+            for row in source_ws.iter_rows():
+                for cell in row:
+                    target_cell = target_ws.cell(row=cell.row, column=cell.column)
+                    
+                    # Copy formatting properties
+                    if cell.font:
+                        target_cell.font = copy(cell.font)
+                    if cell.border:
+                        target_cell.border = copy(cell.border)
+                    if cell.fill:
+                        target_cell.fill = copy(cell.fill)
+                    if cell.number_format:
+                        target_cell.number_format = cell.number_format
+                    if cell.protection:
+                        target_cell.protection = copy(cell.protection)
+                    if cell.alignment:
+                        target_cell.alignment = copy(cell.alignment)
+            
+            # Copy merged cells
+            for merged_range in source_ws.merged_cells.ranges:
+                target_ws.merge_cells(str(merged_range))
+                
+            logger.info("✓ Worksheet formatting copied successfully")
+        except Exception as e:
+            logger.warning(f"Failed to copy worksheet formatting: {e}")
+    
+    def _auto_adjust_row_heights(self, worksheet):
+        """Auto-adjust row heights to fit content using improved AutoFit logic.
+        
+        Args:
+            worksheet: The worksheet to adjust row heights for
+        """
+        try:
+            logger.info("Starting auto row height adjustment for Overview tab")
+            
+            # Calculate row heights based on content with better logic
+            # Only process rows that likely contain content (first 50 rows should be enough)
+            max_content_row = min(50, worksheet.max_row)
+            for row_idx in range(1, max_content_row + 1):
+                max_height = 15  # Default minimum height
+                max_text_length = 0
+                
+                # Find the longest text in this row
+                for col_idx in range(1, worksheet.max_column + 1):
+                    cell = worksheet.cell(row=row_idx, column=col_idx)
+                    if cell.value and isinstance(cell.value, str):
+                        text_length = len(str(cell.value).strip())
+                        max_text_length = max(max_text_length, text_length)
+                
+                if max_text_length > 0:
+                    # Calculate height based on text length and font size
+                    # Assuming average font size of 11pt and ~8 characters per inch
+                    # Excel's default row height is 15 points for 11pt font
+                    
+                    # Estimate lines needed (more conservative estimate)
+                    chars_per_line = 60  # Conservative estimate for typical column width
+                    estimated_lines = max(1, (max_text_length // chars_per_line) + 1)
+                    
+                    # Calculate height: base height + additional height for extra lines
+                    # Each line needs about 15 points of height
+                    calculated_height = estimated_lines * 15
+                    
+                    # Add some padding for better readability
+                    calculated_height += 5
+                    
+                    # Cap maximum height to prevent extremely tall rows
+                    calculated_height = min(calculated_height, 120)
+                    
+                    max_height = max(max_height, calculated_height)
+                
+                # Apply the calculated height to the row
+                worksheet.row_dimensions[row_idx].height = max_height
+                
+                # Log significant height adjustments only
+                if max_height > 20 or max_text_length > 50:
+                    logger.info(f"Row {row_idx} height set to {max_height:.1f} points (text length: {max_text_length})")
+            
+            logger.info("✓ Row heights auto-adjusted successfully")
+            
+        except Exception as e:
+            logger.warning(f"Failed to auto-adjust row heights: {e}")
+    
+    def _auto_adjust_column_widths(self, worksheet):
+        """Auto-adjust column widths to fit content using improved AutoFit logic.
+        
+        Args:
+            worksheet: The worksheet to adjust column widths for
+        """
+        try:
+            logger.info("Starting auto column width adjustment for Overview tab")
+            
+            # Calculate column widths based on content with better logic
+            for col_idx in range(1, worksheet.max_column + 1):
+                column_letter = worksheet.cell(row=1, column=col_idx).column_letter
+                max_width = 8.43  # Default minimum width (Excel default)
+                max_text_length = 0
+                
+                # Find the longest text in this column
+                for row_idx in range(1, worksheet.max_row + 1):
+                    cell = worksheet.cell(row=row_idx, column=col_idx)
+                    if cell.value and isinstance(cell.value, str):
+                        text_length = len(str(cell.value).strip())
+                        max_text_length = max(max_text_length, text_length)
+                
+                if max_text_length > 0:
+                    # Calculate width based on text length
+                    # Excel's character width calculation: ~0.15 units per character for 11pt font
+                    # Add padding for better readability
+                    calculated_width = max(8.43, (max_text_length * 0.15) + 3)
+                    
+                    # Cap maximum width to prevent extremely wide columns
+                    calculated_width = min(calculated_width, 60)
+                    
+                    max_width = max(max_width, calculated_width)
+                
+                # Apply the calculated width to the column
+                worksheet.column_dimensions[column_letter].width = max_width
+                
+                # Log significant width adjustments only
+                if max_width > 12 or max_text_length > 50:
+                    logger.info(f"Column {column_letter} width set to {max_width:.1f} (text length: {max_text_length})")
+            
+            logger.info("✓ Column widths auto-adjusted successfully")
+            
+        except Exception as e:
+            logger.warning(f"Failed to auto-adjust column widths: {e}")
     
     def _find_stakeholder_table(self, worksheet) -> tuple:
         """Find the table with Stakeholder Name, Department/Organisation Name, and Position columns.
