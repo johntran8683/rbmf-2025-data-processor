@@ -1396,8 +1396,13 @@ class RBMFTransformer:
             # Apply formatting from template (preserve exact template layout)
             self._copy_worksheet_formatting(template_wb['Overview'], ws_overview)
 
+            # Ensure all cells wrap text as requested
+            self._set_wrap_text_for_all_cells(ws_overview)
+
             # After copying template formatting, hide borders on empty cells to match template's emerging tables look
             self._hide_borders_on_empty_cells(ws_overview)
+
+            # Note: We no longer copy the template Overview as a separate 'Overview 2025' sheet
             
             logger.info("Successfully transformed Overview tab using 5-table mapping algorithm")
             return True
@@ -1833,13 +1838,92 @@ class RBMFTransformer:
         try:
             from copy import copy
             
-            # Copy column widths
+            # Copy default sheet format (affects unspecified columns/rows)
+            try:
+                if hasattr(source_ws, 'sheet_format') and source_ws.sheet_format is not None:
+                    if getattr(source_ws.sheet_format, 'defaultColWidth', None) is not None:
+                        target_ws.sheet_format.defaultColWidth = source_ws.sheet_format.defaultColWidth
+                    if getattr(source_ws.sheet_format, 'defaultRowHeight', None) is not None:
+                        target_ws.sheet_format.defaultRowHeight = source_ws.sheet_format.defaultRowHeight
+            except Exception:
+                pass
+
+            # Copy column widths and hidden flags
             for col_idx, column_dimension in source_ws.column_dimensions.items():
                 target_ws.column_dimensions[col_idx].width = column_dimension.width
+                try:
+                    target_ws.column_dimensions[col_idx].hidden = column_dimension.hidden
+                    target_ws.column_dimensions[col_idx].outlineLevel = column_dimension.outlineLevel
+                except Exception:
+                    pass
+
+            # Set specific column widths for Overview tab (A-H)
+            # A=181px, B=127px, C=127px, D=100px, E=222px, F=222px, G=222px, H=222px
+            try:
+                from openpyxl.utils import get_column_letter
+                # Convert Google Sheets pixels to Excel units: ColumnWidth = 1 + (Pixels - 12) / 7
+                def pixels_to_excel_units(pixels):
+                    return 1 + (pixels - 12) / 7
+                
+                width_map = {
+                    'A': pixels_to_excel_units(181),  # ~25.1
+                    'B': pixels_to_excel_units(127),  # ~17.4
+                    'C': pixels_to_excel_units(127),  # ~17.4
+                    'D': pixels_to_excel_units(100),  # ~13.6
+                    'E': pixels_to_excel_units(222),  # ~31.0
+                    'F': pixels_to_excel_units(222),  # ~31.0
+                    'G': pixels_to_excel_units(222),  # ~31.0
+                    'H': pixels_to_excel_units(222),  # ~31.0
+                }
+                for col_letter, width in width_map.items():
+                    target_ws.column_dimensions[col_letter].width = width
+            except Exception as e:
+                logger.warning(f"Failed to set specific column widths: {e}")
+                pass
+
+            # Ensure every visible column up to template max_column has an explicit width
+            try:
+                from openpyxl.utils import get_column_letter
+                default_col_width = getattr(source_ws.sheet_format, 'defaultColWidth', None)
+                if not default_col_width:
+                    default_col_width = 8.43  # Excel default
+                for c in range(1, source_ws.max_column + 1):
+                    letter = get_column_letter(c)
+                    # Skip A-H as they're set above
+                    if letter not in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']:
+                        src_w = source_ws.column_dimensions.get(letter).width if letter in source_ws.column_dimensions else None
+                        tgt_dim = target_ws.column_dimensions[letter]
+                        tgt_dim.width = src_w if src_w is not None else default_col_width
+            except Exception:
+                pass
             
-            # Copy row heights
+            # Copy row heights and hidden flags
             for row_idx, row_dimension in source_ws.row_dimensions.items():
                 target_ws.row_dimensions[row_idx].height = row_dimension.height
+                try:
+                    target_ws.row_dimensions[row_idx].hidden = row_dimension.hidden
+                    target_ws.row_dimensions[row_idx].outlineLevel = row_dimension.outlineLevel
+                except Exception:
+                    pass
+
+            # Ensure every row up to template max_row has an explicit height
+            try:
+                default_row_height = getattr(source_ws.sheet_format, 'defaultRowHeight', None)
+                if not default_row_height:
+                    default_row_height = 15
+                for r in range(1, source_ws.max_row + 1):
+                    src_h = source_ws.row_dimensions.get(r).height if r in source_ws.row_dimensions else None
+                    target_ws.row_dimensions[r].height = src_h if src_h is not None else default_row_height
+            except Exception:
+                pass
+            
+            # Set auto-fit row height for all rows in Overview sheet
+            try:
+                for row_idx in range(1, target_ws.max_row + 1):
+                    target_ws.row_dimensions[row_idx].height = None  # Auto-fit height
+            except Exception as e:
+                logger.warning(f"Failed to set auto-fit row height: {e}")
+                pass
             
             # Copy cell formatting for all cells (including empty ones)
             for row in source_ws.iter_rows():
@@ -1863,10 +1947,69 @@ class RBMFTransformer:
             # Copy merged cells
             for merged_range in source_ws.merged_cells.ranges:
                 target_ws.merge_cells(str(merged_range))
+
+            # Copy freeze panes and basic sheet view options
+            try:
+                target_ws.freeze_panes = source_ws.freeze_panes
+                if hasattr(source_ws, 'sheet_view') and hasattr(target_ws, 'sheet_view'):
+                    target_ws.sheet_view.showGridLines = source_ws.sheet_view.showGridLines
+                    target_ws.sheet_view.zoomScale = source_ws.sheet_view.zoomScale
+                    target_ws.sheet_view.zoomScaleNormal = source_ws.sheet_view.zoomScaleNormal
+            except Exception:
+                pass
+
+            # Copy print/page setup options
+            try:
+                target_ws.print_options = copy(source_ws.print_options)
+                target_ws.page_margins = copy(source_ws.page_margins)
+                target_ws.page_setup = copy(source_ws.page_setup)
+            except Exception:
+                pass
+
+            # Copy sheet properties (e.g., tab color)
+            try:
+                if hasattr(source_ws, 'sheet_properties') and hasattr(target_ws, 'sheet_properties'):
+                    target_ws.sheet_properties.tabColor = getattr(source_ws.sheet_properties, 'tabColor', None)
+            except Exception:
+                pass
+
+            # Copy data validations
+            try:
+                from copy import copy as _copy
+                if getattr(source_ws, 'data_validations', None):
+                    # Recreate DataValidations container on target and append copies
+                    target_ws.data_validations = type(source_ws.data_validations)()
+                    for dv in source_ws.data_validations.dataValidation:
+                        target_ws.data_validations.append(_copy(dv))
+            except Exception:
+                pass
                 
             logger.info("✓ Worksheet formatting copied successfully")
         except Exception as e:
             logger.warning(f"Failed to copy worksheet formatting: {e}")
+
+    def _set_wrap_text_for_all_cells(self, worksheet) -> None:
+        """Set wrap_text=True for all cells in the given worksheet while preserving alignment."""
+        try:
+            from openpyxl.styles import Alignment
+            for row in worksheet.iter_rows():
+                for cell in row:
+                    existing = cell.alignment
+                    cell.alignment = Alignment(
+                        horizontal=getattr(existing, 'horizontal', None),
+                        vertical=getattr(existing, 'vertical', None),
+                        textRotation=getattr(existing, 'textRotation', 0),
+                        wrap_text=True,
+                        shrinkToFit=getattr(existing, 'shrinkToFit', None),
+                        indent=getattr(existing, 'indent', 0)
+                    )
+            logger.info("✓ Wrap text enabled for all cells in Overview")
+        except Exception as e:
+            logger.warning(f"Failed to set wrap text on cells: {e}")
+
+    def _copy_worksheet_values(self, source_ws, target_ws) -> None:
+        """Deprecated: previously used to clone template Overview. Kept for backward compatibility."""
+        return
     
     def _auto_adjust_row_heights(self, worksheet):
         """Auto-adjust row heights to fit content using improved AutoFit logic.

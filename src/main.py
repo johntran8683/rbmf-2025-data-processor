@@ -385,6 +385,36 @@ def transform(data_dir: Path, folders: tuple, interactive: bool, steps: bool, fi
                     # Create output file
                     success = transformer.create_output_file(file_path, output_file, apply_filter=filter)
                     
+                    # Final step: apply template Overview formatting (do NOT change values)
+                    if success:
+                        try:
+                            # Load template workbook once per iteration (cheap enough) to ensure freshness
+                            template_wb = transformer.load_template_workbook()
+                            if 'Overview' in template_wb.sheetnames:
+                                import openpyxl
+                                res_wb = openpyxl.load_workbook(output_file)
+                                if 'Overview' in res_wb.sheetnames:
+                                    tmpl_ws = template_wb['Overview']
+                                    res_ws = res_wb['Overview']
+                                    # Unmerge existing merges to avoid duplicate/conflicting ranges
+                                    try:
+                                        existing_merges = list(res_ws.merged_cells.ranges)
+                                        for rng in existing_merges:
+                                            res_ws.unmerge_cells(str(rng))
+                                    except Exception:
+                                        pass
+                                    # Copy full formatting/layout from template (values unchanged)
+                                    transformer._copy_worksheet_formatting(tmpl_ws, res_ws)
+                                    # Save the updated workbook
+                                    res_wb.save(output_file)
+                                    logger.info(f"Applied Overview formatting from template to: {output_file}")
+                                else:
+                                    logger.warning(f"Output file missing 'Overview' sheet, skipped formatting: {output_file}")
+                            else:
+                                logger.warning("Template missing 'Overview' sheet, skipped formatting step")
+                        except Exception as fmt_err:
+                            logger.warning(f"Failed to apply Overview formatting to {output_file}: {fmt_err}")
+                    
                     file_result = {
                         'file_name': file_path.name,
                         'created': success,
@@ -528,6 +558,60 @@ def run(folder_url: str, output_dir: Path):
     
     # Then transform
     ctx.invoke(transform, data_dir=output_dir)
+
+
+@cli.command()
+@click.option('--template-file', required=True, help='Path to the template Excel file (with Overview sheet)')
+@click.option('--result-file', required=True, help='Path to the result Excel file whose Overview data must retain, but adopt template formatting')
+def format_overview(template_file: str, result_file: str):
+    """Apply full formatting/layout from template's Overview to result's Overview without changing data."""
+    from openpyxl import load_workbook
+    from pathlib import Path as _Path
+    
+    setup_logging()
+    logger.info("Starting Overview formatting application (template -> result)")
+    try:
+        template_path = _Path(template_file)
+        result_path = _Path(result_file)
+        if not template_path.exists():
+            logger.error(f"Template file not found: {template_path}")
+            return
+        if not result_path.exists():
+            logger.error(f"Result file not found: {result_path}")
+            return
+        
+        # Load workbooks
+        tmpl_wb = load_workbook(template_path)
+        res_wb = load_workbook(result_path)
+        
+        if 'Overview' not in tmpl_wb.sheetnames:
+            logger.error("Template workbook missing 'Overview' sheet")
+            return
+        if 'Overview' not in res_wb.sheetnames:
+            logger.error("Result workbook missing 'Overview' sheet")
+            return
+        
+        tmpl_ws = tmpl_wb['Overview']
+        res_ws = res_wb['Overview']
+        
+        # Unmerge any existing merges in result to avoid duplicate/conflicting merge ranges
+        try:
+            existing_merges = list(res_ws.merged_cells.ranges)
+            for rng in existing_merges:
+                res_ws.unmerge_cells(str(rng))
+        except Exception:
+            pass
+        
+        # Reuse transformer formatting copier (does not overwrite values)
+        transformer = RBMFTransformer(data_dir=_Path('.'))
+        transformer._copy_worksheet_formatting(tmpl_ws, res_ws)
+        
+        # Preserve the data values (already unchanged); save workbook
+        res_wb.save(result_path)
+        logger.info(f"✓ Applied template formatting to Overview without altering data: {result_path}")
+        
+    except Exception as e:
+        logger.error(f"Failed to apply Overview formatting: {e}")
 
 
 if __name__ == "__main__":

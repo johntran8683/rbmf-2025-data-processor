@@ -126,6 +126,35 @@ def process_single_file_worker(task: Dict[str, Any]) -> Dict[str, Any]:
         apply_filter = config.get('apply_filter', False)
         success = transformer.create_output_file(source_file, output_file, apply_filter=apply_filter)
         
+        # Apply Overview formatting (same as sequential mode)
+        if success:
+            try:
+                # Load template workbook
+                template_wb = transformer.load_template_workbook()
+                if 'Overview' in template_wb.sheetnames:
+                    import openpyxl
+                    res_wb = openpyxl.load_workbook(output_file)
+                    if 'Overview' in res_wb.sheetnames:
+                        tmpl_ws = template_wb['Overview']
+                        res_ws = res_wb['Overview']
+                        # Unmerge existing merges to avoid duplicate/conflicting ranges
+                        try:
+                            existing_merges = list(res_ws.merged_cells.ranges)
+                            for rng in existing_merges:
+                                res_ws.unmerge_cells(str(rng))
+                        except Exception:
+                            pass
+                        # Copy full formatting/layout from template (values unchanged)
+                        transformer._copy_worksheet_formatting(tmpl_ws, res_ws)
+                        # Save the updated workbook
+                        res_wb.save(output_file)
+                    else:
+                        logger.warning(f"Output file missing 'Overview' sheet, skipped formatting: {output_file}")
+                else:
+                    logger.warning("Template missing 'Overview' sheet, skipped formatting step")
+            except Exception as fmt_err:
+                logger.warning(f"Failed to apply Overview formatting to {output_file}: {fmt_err}")
+        
         return {
             'file_name': task['file_name'],
             'success': success,
