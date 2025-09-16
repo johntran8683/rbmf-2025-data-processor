@@ -14,15 +14,17 @@ from .config import settings
 class OptimizedRBMFTransformer(RBMFTransformer):
     """Optimized RBMF transformer with performance improvements."""
     
-    def __init__(self, data_dir: Path, include_steps: bool = False, target_folders: list = None):
+    def __init__(self, data_dir: Path, include_steps: bool = False, target_folders: list = None, apply_filter: bool = False):
         """Initialize optimized transformer.
         
         Args:
             data_dir: Path to the data directory
             include_steps: Whether to include intermediate steps
             target_folders: List of target folders to process
+            apply_filter: Whether to apply filtering to RBMF data
         """
         super().__init__(data_dir, include_steps, target_folders)
+        self.apply_filter = apply_filter
         
         # Initialize performance components
         self.parallel_processor = ParallelProcessor(max_workers=settings.max_workers)
@@ -97,7 +99,12 @@ class OptimizedRBMFTransformer(RBMFTransformer):
             Folder processing results
         """
         source_folder = self.data_dir / folder_name
-        output_folder = self.output_dir / folder_name / ("steps" if self.include_steps else "final")
+        if self.include_steps:
+            output_folder = self.output_dir / folder_name / "steps"
+        elif self.apply_filter:
+            output_folder = self.output_dir / folder_name / "final-filter"
+        else:
+            output_folder = self.output_dir / folder_name / "final"
         
         if not source_folder.exists():
             logger.warning(f"Source folder does not exist: {source_folder}")
@@ -133,7 +140,8 @@ class OptimizedRBMFTransformer(RBMFTransformer):
                 output_file=output_file,
                 transformer_config={
                     'data_dir': str(self.data_dir),
-                    'include_steps': self.include_steps
+                    'include_steps': self.include_steps,
+                    'apply_filter': self.apply_filter
                 }
             )
             file_tasks.append(task)

@@ -123,7 +123,8 @@ def process_single_file_worker(task: Dict[str, Any]) -> Dict[str, Any]:
         transformer.load_file_to_project_id_mapping()
         
         # Process file
-        success = transformer.create_output_file(source_file, output_file)
+        apply_filter = config.get('apply_filter', False)
+        success = transformer.create_output_file(source_file, output_file, apply_filter=apply_filter)
         
         return {
             'file_name': task['file_name'],

@@ -9,6 +9,7 @@ from .rbmf_processor.config import settings
 from .rbmf_processor.data_processor import DataProcessor
 from .rbmf_processor.gdown_client import GDownClient
 from .rbmf_processor.rbmf_transformer import RBMFTransformer
+from .rbmf_processor.optimized_transformer import OptimizedRBMFTransformer
 
 
 def _interactive_folder_selection(data_dir: Path) -> list:
@@ -307,34 +308,78 @@ def transform(data_dir: Path, folders: tuple, interactive: bool, steps: bool, fi
                 'file_results': []
             }
             
-            # Process all files in the folder
-            for file_path in source_folder.glob('*'):
-                if file_path.is_file():
-                    if (file_path.suffix.lower() in ['.xlsx', '.xls'] or 
-                        transformer._is_excel_file(file_path)):
-                        results['total_files'] += 1
-                        
-                        # Create output file with same name
-                        output_file = output_folder / file_path.name
-                        
-                        # Create output file
-                        success = transformer.create_output_file(file_path, output_file, apply_filter=filter)
-                        
-                        file_result = {
-                            'file_name': file_path.name,
-                            'created': success,
-                            'output_file': str(output_file) if success else None,
-                            'error': None if success else "Failed to create file"
-                        }
-                        
-                        folder_results['file_results'].append(file_result)
-                        
-                        if success:
-                            results['created_files'] += 1
-                            folder_results['files_created'] += 1
-                        else:
-                            results['failed_files'] += 1
-                            folder_results['files_failed'] += 1
+            # Get all files to process
+            files_to_process = list(source_folder.glob('*'))
+            files_to_process = [f for f in files_to_process if f.is_file() and transformer._is_excel_file(f)]
+            
+            # Check if parallel processing should be used
+            use_parallel = (
+                settings.parallel_processing and 
+                len(files_to_process) > 1
+            )
+            
+            if use_parallel:
+                logger.info(f"Using parallel processing for {len(files_to_process)} files in folder: {folder_name}")
+                
+                # Use optimized transformer for parallel processing
+                optimized_transformer = OptimizedRBMFTransformer(
+                    data_dir=data_dir,
+                    include_steps=steps,
+                    target_folders=[folder_name],
+                    apply_filter=filter
+                )
+                
+                # Process folder with parallel processing
+                parallel_results = optimized_transformer._process_folder_optimized(folder_name)
+                
+                # Convert parallel results to match expected format
+                folder_results['files_created'] = parallel_results['files_created']
+                folder_results['files_failed'] = parallel_results['files_failed']
+                folder_results['file_results'] = []
+                
+                for file_result in parallel_results['file_results']:
+                    # Convert parallel result format to expected format
+                    converted_result = {
+                        'file_name': file_result['file_name'],
+                        'created': file_result['success'],
+                        'output_file': file_result.get('output_file'),
+                        'error': file_result.get('error')
+                    }
+                    folder_results['file_results'].append(converted_result)
+                
+                # Update global results
+                results['total_files'] += parallel_results['files_processed']
+                results['created_files'] += parallel_results['files_created']
+                results['failed_files'] += parallel_results['files_failed']
+                
+            else:
+                logger.info(f"Using sequential processing for {len(files_to_process)} files in folder: {folder_name}")
+                
+                # Process all files in the folder sequentially
+                for file_path in files_to_process:
+                    results['total_files'] += 1
+                    
+                    # Create output file with same name
+                    output_file = output_folder / file_path.name
+                    
+                    # Create output file
+                    success = transformer.create_output_file(file_path, output_file, apply_filter=filter)
+                    
+                    file_result = {
+                        'file_name': file_path.name,
+                        'created': success,
+                        'output_file': str(output_file) if success else None,
+                        'error': None if success else "Failed to create file"
+                    }
+                    
+                    folder_results['file_results'].append(file_result)
+                    
+                    if success:
+                        results['created_files'] += 1
+                        folder_results['files_created'] += 1
+                    else:
+                        results['failed_files'] += 1
+                        folder_results['files_failed'] += 1
             
             results['folder_results'][folder_name] = folder_results
         
