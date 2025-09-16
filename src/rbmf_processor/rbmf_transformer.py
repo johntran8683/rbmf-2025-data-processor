@@ -543,6 +543,8 @@ class RBMFTransformer:
         try:
             # Read the RBMF tab from source file
             rbmf_df = pd.read_excel(source_file, sheet_name='RBMF')
+            # Track original row order to preserve through transformations
+            rbmf_df['__source_row_index__'] = rbmf_df.index
             
             if rbmf_df.empty:
                 logger.warning(f"RBMF tab is empty in {source_file.name}")
@@ -711,6 +713,10 @@ class RBMFTransformer:
             for col in other_columns:
                 if col in rbmf2_df.columns:
                     agg_dict[col] = 'first'
+            
+            # Preserve __source_row_index__ by taking the minimum (earliest appearance)
+            if '__source_row_index__' in rbmf2_df.columns:
+                agg_dict['__source_row_index__'] = 'min'
 
             # Custom aggregation for Project Output: merge distinct values with dash bullets on new lines
             if 'Project Output' in rbmf2_df.columns:
@@ -758,7 +764,8 @@ class RBMFTransformer:
                 agg_dict['Supporting Document'] = _merge_supporting_docs
             
             # Group and aggregate
-            rbmf2_aggregated = rbmf2_df.groupby(group_columns, dropna=False).agg(agg_dict).reset_index()
+            # Preserve original appearance order of groups
+            rbmf2_aggregated = rbmf2_df.groupby(group_columns, dropna=False, sort=False).agg(agg_dict).reset_index()
             
             # Rename Completed Output Number to Total Completed Output Number
             if 'Completed Output Number' in rbmf2_aggregated.columns:
@@ -772,6 +779,9 @@ class RBMFTransformer:
             if validation_columns:  # Only validate if there are columns to validate
                 self._validate_group_consistency(rbmf2_df, group_columns, validation_columns)
             
+            # Sort aggregated rows by original appearance if available
+            if '__source_row_index__' in rbmf2_aggregated.columns:
+                rbmf2_aggregated = rbmf2_aggregated.sort_values(by='__source_row_index__', kind='stable').reset_index(drop=True)
             logger.info(f"Created RBMF_2 data with {len(rbmf2_aggregated)} rows and {len(rbmf2_aggregated.columns)} columns")
             return rbmf2_aggregated
             
@@ -884,6 +894,31 @@ class RBMFTransformer:
                 logger.info("Applying column mappings to RBMF_Final data")
                 rbmf_final_df = self._apply_column_mapping(rbmf_final_df, column_mappings)
             
+            # Adjust Indicator category based on Indicator ID prefix
+            try:
+                if 'Indicator ID' in rbmf_final_df.columns and 'Indicator category' in rbmf_final_df.columns:
+                    indicator_id_series = rbmf_final_df['Indicator ID'].astype(str).fillna('')
+                    # Create masks
+                    op_mask = indicator_id_series.str.startswith('OP', na=False)
+                    oc_mask = indicator_id_series.str.startswith('OC', na=False)
+                    in_mask = indicator_id_series.str.startswith('In', na=False)
+                    # Apply updates without disturbing other values
+                    if op_mask.any():
+                        rbmf_final_df.loc[op_mask, 'Indicator category'] = 'Output'
+                    if oc_mask.any():
+                        rbmf_final_df.loc[oc_mask, 'Indicator category'] = 'Outcome'
+                    if in_mask.any():
+                        rbmf_final_df.loc[in_mask, 'Indicator category'] = 'Outcome'
+                    logger.info("Updated Indicator category from Indicator ID prefixes (OP->Output, OC/In->Outcome)")
+                else:
+                    logger.warning("Cannot adjust Indicator category: required columns missing")
+            except Exception as e:
+                logger.warning(f"Failed to adjust Indicator category from Indicator ID: {e}")
+
+            # Preserve original row order in RBMF_Final when available
+            if '__source_row_index__' in rbmf2_df.columns:
+                rbmf_final_df['__source_row_index__'] = rbmf2_df['__source_row_index__']
+                rbmf_final_df = rbmf_final_df.sort_values(by='__source_row_index__', kind='stable').reset_index(drop=True)
             logger.info(f"Created RBMF_Final data with {len(rbmf_final_df)} rows and {len(rbmf_final_df.columns)} columns")
             return rbmf_final_df
             
@@ -1358,14 +1393,11 @@ class RBMFTransformer:
                     if pd.notna(value) and str(value).strip():
                         ws_overview.cell(row=row_idx + 1, column=col_idx + 1, value=str(value))
             
-            # Apply formatting from template
+            # Apply formatting from template (preserve exact template layout)
             self._copy_worksheet_formatting(template_wb['Overview'], ws_overview)
-            
-            # Auto-adjust row heights to fit content
-            self._auto_adjust_row_heights(ws_overview)
-            
-            # Auto-adjust column widths to fit content
-            self._auto_adjust_column_widths(ws_overview)
+
+            # After copying template formatting, hide borders on empty cells to match template's emerging tables look
+            self._hide_borders_on_empty_cells(ws_overview)
             
             logger.info("Successfully transformed Overview tab using 5-table mapping algorithm")
             return True
@@ -1597,6 +1629,31 @@ class RBMFTransformer:
                                     df_output.iloc[row_idx, col_idx + 1] = str(project_id)
                                     logger.info(f"Mapped Project ID '{project_id}' to Overview tab")
                                 break
+
+                    # Try to map Implementation period start/end from project_dates.json using Project ID
+                    try:
+                        project_dates = self._load_project_dates()
+                        if project_dates and str(project_id) in project_dates:
+                            start_date, end_date = project_dates[str(project_id)]
+                            # Only write when dates are non-empty and not '-'
+                            if isinstance(start_date, str) and start_date.strip() and start_date.strip() != '-':
+                                # Locate the "Implementation period" label and set adjacent cells
+                                for r in range(len(df_output)):
+                                    for c in range(len(df_output.columns)):
+                                        v = df_output.iloc[r, c]
+                                        if pd.notna(v) and 'Implementation period' in str(v):
+                                            if c + 1 < len(df_output.columns):
+                                                df_output.iloc[r, c + 1] = start_date.strip()
+                                            if isinstance(end_date, str) and end_date.strip() and end_date.strip() != '-' and c + 2 < len(df_output.columns):
+                                                df_output.iloc[r, c + 2] = end_date.strip()
+                                            logger.info("Mapped Implementation period from project_dates.json")
+                                            raise StopIteration
+                        else:
+                            logger.info("No matching entry in project_dates.json for Project ID; leaving Implementation period unchanged")
+                    except StopIteration:
+                        pass
+                    except Exception as e:
+                        logger.warning(f"Failed to map Implementation period from project_dates.json: {e}")
             
             # Extract Strategic Outcome from first row
             if 'Strategic Outcome' in rbmf_final_df.columns:
@@ -1617,6 +1674,40 @@ class RBMFTransformer:
             
         except Exception as e:
             logger.warning(f"Failed to map RBMF data to Overview: {e}")
+
+    def _load_project_dates(self) -> dict:
+        """Load project start/end dates from project_dates.json into a mapping.
+        
+        Returns:
+            Dict[str, Tuple[str, str]] mapping Project ID -> (start_date, end_date)
+        """
+        try:
+            import json
+            from pathlib import Path
+            # Resolve repository root (assuming this file is at /app/src/rbmf_processor/...)
+            repo_root = Path(__file__).resolve().parents[2]
+            # Primary path
+            json_path = repo_root / 'project_dates.json'
+            if not json_path.exists():
+                # Fallback: try data directory if provided differently
+                alt_path = repo_root / 'data' / 'project_dates.json'
+                json_path = alt_path if alt_path.exists() else json_path
+            if not json_path.exists():
+                logger.warning("project_dates.json not found; skipping Implementation period mapping")
+                return {}
+            with open(json_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            mapping = {}
+            for entry in data:
+                pid = str(entry.get('project_id', '')).strip()
+                start = entry.get('start_date', '')
+                end = entry.get('end_date', '')
+                if pid:
+                    mapping[pid] = (start, end)
+            return mapping
+        except Exception as e:
+            logger.warning(f"Error loading project_dates.json: {e}")
+            return {}
     
     def _apply_rbmf_filtering(self, rbmf_final_df: pd.DataFrame) -> pd.DataFrame:
         """Apply filtering logic to RBMF_Final data based on Strategic Outcome + Indicator name groups.
@@ -1633,7 +1724,7 @@ class RBMFTransformer:
                 return rbmf_final_df
             
             # Check required columns exist
-            required_columns = ['Strategic Outcome', 'Indicator name', 'Periodical Target', 'Target Reporting Cycle']
+            required_columns = ['Strategic Outcome', 'Indicator name', 'Periodical Result', 'Target Reporting Cycle']
             missing_columns = [col for col in required_columns if col not in rbmf_final_df.columns]
             if missing_columns:
                 logger.warning(f"Missing required columns for filtering: {missing_columns}")
@@ -1649,19 +1740,19 @@ class RBMFTransformer:
             for (strategic_outcome, indicator_name), group_df in grouped:
                 logger.debug(f"Processing group: {strategic_outcome} + {indicator_name} ({len(group_df)} rows)")
                 
-                # Convert Periodical Target to numeric, handling any non-numeric values
+                # Convert Periodical Result to numeric, handling any non-numeric values
                 group_df = group_df.copy()
-                group_df['Periodical Target'] = pd.to_numeric(group_df['Periodical Target'], errors='coerce')
+                group_df['Periodical Result'] = pd.to_numeric(group_df['Periodical Result'], errors='coerce')
                 
-                # Priority 1: Check if any row has Periodical Target > 0
-                rows_with_target = group_df[group_df['Periodical Target'] > 0]
+                # Priority 1: Check if any row has Periodical Result > 0
+                rows_with_target = group_df[group_df['Periodical Result'] > 0]
                 
                 if not rows_with_target.empty:
-                    # Keep only rows with Periodical Target > 0
+                    # Keep only rows with Periodical Result > 0
                     filtered_rows.append(rows_with_target)
-                    logger.debug(f"  → Kept {len(rows_with_target)} rows with Periodical Target > 0")
+                    logger.debug(f"  → Kept {len(rows_with_target)} rows with Periodical Result > 0")
                 else:
-                    # Priority 2: All rows have Periodical Target = 0, keep most recent Target Reporting Cycle
+                    # Priority 2: All rows have Periodical Result = 0, keep most recent Target Reporting Cycle
                     most_recent_row = self._find_most_recent_reporting_cycle(group_df)
                     if most_recent_row is not None:
                         filtered_rows.append(most_recent_row)
@@ -1670,7 +1761,11 @@ class RBMFTransformer:
                         logger.warning(f"  → No valid row found for group: {strategic_outcome} + {indicator_name}")
             
             if filtered_rows:
+                # Concatenate while preserving original relative order
                 result_df = pd.concat(filtered_rows, ignore_index=True)
+                # Ensure stable order by source appearance: use original index if present
+                if '__source_row_index__' in rbmf_final_df.columns:
+                    result_df = result_df.sort_values(by='__source_row_index__', kind='stable').reset_index(drop=True)
                 logger.info(f"✓ RBMF filtering completed: {len(rbmf_final_df)} → {len(result_df)} rows")
                 return result_df
             else:
@@ -1786,6 +1881,10 @@ class RBMFTransformer:
             # Only process rows that likely contain content (first 50 rows should be enough)
             max_content_row = min(50, worksheet.max_row)
             for row_idx in range(1, max_content_row + 1):
+                # Respect hidden rows copied from template
+                row_dim = worksheet.row_dimensions.get(row_idx)
+                if row_dim is not None and getattr(row_dim, 'hidden', False):
+                    continue
                 max_height = 15  # Default minimum height
                 max_text_length = 0
                 
@@ -1841,6 +1940,10 @@ class RBMFTransformer:
             # Calculate column widths based on content with better logic
             for col_idx in range(1, worksheet.max_column + 1):
                 column_letter = worksheet.cell(row=1, column=col_idx).column_letter
+                # Respect hidden columns copied from template
+                col_dim = worksheet.column_dimensions.get(column_letter)
+                if col_dim is not None and getattr(col_dim, 'hidden', False):
+                    continue
                 max_width = 8.43  # Default minimum width (Excel default)
                 max_text_length = 0
                 
@@ -2103,6 +2206,11 @@ class RBMFTransformer:
             template_wb: Template workbook to copy formatting from
         """
         try:
+            # Remove the internal __source_row_index__ column from final output
+            df = df.copy()
+            if '__source_row_index__' in df.columns:
+                df = df.drop(columns=['__source_row_index__'])
+            
             # Get template RBMF worksheet for formatting reference
             if 'RBMF' in template_wb.sheetnames:
                 template_rbmf_ws = template_wb['RBMF']

@@ -1,0 +1,770 @@
+[
+  {
+    "project_id": "-",
+    "project_name": "De-risking Instrument to Accelerate Energy-Efficiency Business Transaction with Danfoss Energy Management System (DEMS)",
+    "start_date": "7-Mar-22",
+    "end_date": "6-Mar-24"
+  },
+  {
+    "project_id": "-",
+    "project_name": "Energy Saving Insurance to De-risk Energy Efficiency Project",
+    "start_date": "-",
+    "end_date": "-"
+  },
+  {
+    "project_id": "-",
+    "project_name": "Decarbonization - Unlocking Investment Potential through Renewable Energy Integration",
+    "start_date": "-",
+    "end_date": "-"
+  },
+  {
+    "project_id": "-",
+    "project_name": "Energy Transition Campaign and Public Awareness",
+    "start_date": "-",
+    "end_date": "-"
+  },
+  {
+    "project_id": "-",
+    "project_name": "Power System Planning Integrated with Geospatial Tool",
+    "start_date": "-",
+    "end_date": "-"
+  },
+  {
+    "project_id": "-",
+    "project_name": "Roadmap of Indonesia Supergrid Development to Increase RE Development",
+    "start_date": "-",
+    "end_date": "-"
+  },
+  {
+    "project_id": "-",
+    "project_name": "Roadmap of Smart Grid Development",
+    "start_date": "-",
+    "end_date": "-"
+  },
+  {
+    "project_id": "-",
+    "project_name": "Strengthening the Energy Transition Mechanism (ETM) Country Platform and Advancing Energy Transition Project Assessments",
+    "start_date": "-",
+    "end_date": "-"
+  },
+  {
+    "project_id": "-",
+    "project_name": "Unlocking Indonesia's Pumped Storage Hydropower Potential",
+    "start_date": "-",
+    "end_date": "-"
+  },
+  {
+    "project_id": "ETP-002-INO-1",
+    "project_name": "PLN Main and Disaster Recovery Control Centers",
+    "start_date": "27-Sep-21",
+    "end_date": "31-Dec-23"
+  },
+  {
+    "project_id": "ETP-007-INO-2",
+    "project_name": "Energy Efficiency and Energy Conservation Awareness Raising in the Education Sector",
+    "start_date": "1-Mar-22",
+    "end_date": "15-Sep-22"
+  },
+  {
+    "project_id": "ETP-009-INO-3",
+    "project_name": "Supporting Medium-term National Development Planning (RPJMN) 2025 – 2029 Background Study Indonesia",
+    "start_date": "11-Apr-22",
+    "end_date": "31-Dec-23"
+  },
+  {
+    "project_id": "ETP-010-INO-4",
+    "project_name": "Assisting the Revision of the Indonesia Roadmap of Net Zero Emission (NZE) 2060",
+    "start_date": "18-Apr-22",
+    "end_date": "31-Dec-23"
+  },
+  {
+    "project_id": "ETP-011-INO-5",
+    "project_name": "Preparation of the Indonesia's Enhanced Nationally Determined Contribution (NDC) Investment Roadmap for Energy Efficiency",
+    "start_date": "19-Apr-22",
+    "end_date": "15-Apr-23"
+  },
+  {
+    "project_id": "ETP-014-INO-6",
+    "project_name": "Study on the Financial Implications of the Early Retirement of Coal-fired Power Plants",
+    "start_date": "13-Jul-22",
+    "end_date": "29-Feb-24"
+  },
+  {
+    "project_id": "ETP-024-INO-7",
+    "project_name": "Wind Energy Development in Indonesia - Investment Plan",
+    "start_date": "3-May-23",
+    "end_date": "15-Jan-25"
+  },
+  {
+    "project_id": "ETP-025-INO-8",
+    "project_name": "Streamlining Government of Indonesia Plans as a Pathway to Achieve Net Zero Emissions Target",
+    "start_date": "5-May-23",
+    "end_date": "31-Jan-25"
+  },
+  {
+    "project_id": "ETP-036-INO-9",
+    "project_name": "Catalyzing Energy Efficiency as a Service",
+    "start_date": "5-Oct-23",
+    "end_date": "31-Jan-26"
+  },
+  {
+    "project_id": "ETP-039-INO-11",
+    "project_name": "1 GW Solar PV Mapping and Development Plan",
+    "start_date": "22-Nov-23",
+    "end_date": "30-Sep-25"
+  },
+  {
+    "project_id": "ETP-049-INO-13",
+    "project_name": "Supply Chain Integration of Battery Value Chain for Energy Transition",
+    "start_date": "23-May-24",
+    "end_date": "12-Dec-25"
+  },
+  {
+    "project_id": "ETP-051-INO-14",
+    "project_name": "Advisory Services to Support Smart Grid Development and Implementation",
+    "start_date": "1-Jul-24",
+    "end_date": "31-May-26"
+  },
+  {
+    "project_id": "ETP-053-INO-15",
+    "project_name": "Innovating New Incentives Mechanism for Energy Transition Projects",
+    "start_date": "8-Jul-24",
+    "end_date": "14-Nov-25"
+  },
+  {
+    "project_id": "ETP-054-INO-16",
+    "project_name": "Energy Transition Business and Change Management Centre of Excellence",
+    "start_date": "9-Jul-24",
+    "end_date": "31-Jan-26"
+  },
+  {
+    "project_id": "ETP-055-INO-17",
+    "project_name": "Decarbonize Captive Power Market for Industrial Decarbonization",
+    "start_date": "17-Jul-24",
+    "end_date": "20-Apr-26"
+  },
+  {
+    "project_id": "ETP-057-INO-19",
+    "project_name": "Leveraging Industrial Decarbonisation Options in Indonesia by Anticipating International Carbon Tariff",
+    "start_date": "6-Aug-24",
+    "end_date": "30-Sep-25"
+  },
+  {
+    "project_id": "ETP-058-INO-20",
+    "project_name": "Specialized Workforce Development to Support Energy Transition",
+    "start_date": "15-Aug-24",
+    "end_date": "14-Apr-26"
+  },
+  {
+    "project_id": "ETP-061-INO-21",
+    "project_name": "Strengthening Implementation of Government Regulation on Energy Conservation",
+    "start_date": "26-Aug-24",
+    "end_date": "25-Dec-25"
+  },
+  {
+    "project_id": "ETP-063-INO-23",
+    "project_name": "Operationalization of the Just Transition Framework in JETP Indonesia",
+    "start_date": "28-Aug-24",
+    "end_date": "30-Sep-25"
+  },
+  {
+    "project_id": "ETP-076-INO-24",
+    "project_name": "Integrating Battery Energy Storage System (BESS) into the Grid for Energy Transition",
+    "start_date": "7-Feb-25",
+    "end_date": "31-Mar-26"
+  },
+  {
+    "project_id": "ETP-077-INO-25",
+    "project_name": "Preparation of the Mid-Term Strategic Plan (Renstra) 2025-2029",
+    "start_date": "13-Feb-25",
+    "end_date": "30-Sep-25"
+  },
+  {
+    "project_id": "-",
+    "project_name": "Transitioning Coal-Fired Power Plants in Indonesia",
+    "start_date": "-",
+    "end_date": "-"
+  },
+  {
+    "project_id": "-",
+    "project_name": "Smart Grids for Resilient Islands: Piloting smart grid and microgrid frameworks in Bali's electricity system",
+    "start_date": "-",
+    "end_date": "-"
+  },
+  {
+    "project_id": "-",
+    "project_name": "Floating Solar PV on Ministry of Public Works Dams",
+    "start_date": "-",
+    "end_date": "-"
+  },
+  {
+    "project_id": "-",
+    "project_name": "Modernizing Distribution and Grid Codes",
+    "start_date": "-",
+    "end_date": "-"
+  },
+  {
+    "project_id": "-",
+    "project_name": "Unlocking Indonesia's Offshore Wind Energy Potential",
+    "start_date": "-",
+    "end_date": "-"
+  },
+  {
+    "project_id": "-",
+    "project_name": "ERC's Role in Shaping the Energy Landscape",
+    "start_date": "-",
+    "end_date": "-"
+  },
+  {
+    "project_id": "ETP-005-PHI-1",
+    "project_name": "Upgrading Design and Implementation of Battery Energy Storage Market Mechanism of the Philippines Electricity Market Mechanism",
+    "start_date": "14-Dec-21",
+    "end_date": "7-Oct-23"
+  },
+  {
+    "project_id": "ETP-008-PHI-3",
+    "project_name": "ESCO-in-a-box for Southeast Asia",
+    "start_date": "15-Mar-22",
+    "end_date": "31-Oct-23"
+  },
+  {
+    "project_id": "ETP-012-PHI-4",
+    "project_name": "Power Development Roadmap for the Bangsamoro Autonomous Region for Muslim Mindanao (BARMM)",
+    "start_date": "19-Apr-22",
+    "end_date": "31-Dec-23"
+  },
+  {
+    "project_id": "ETP-013-PHI-5",
+    "project_name": "Investment-grade Audit (IGA) Financing Program",
+    "start_date": "13-May-22",
+    "end_date": "31-Oct-24"
+  },
+  {
+    "project_id": "ETP-017-PHI-6",
+    "project_name": "Philippines Grid Diagnostic and Roadmap for Smart Grid Development",
+    "start_date": "6-Sep-22",
+    "end_date": "30-Nov-24"
+  },
+  {
+    "project_id": "ETP-030-PHI-8",
+    "project_name": "Demand Side Management Policy",
+    "start_date": "30-Jun-23",
+    "end_date": "14-Dec-24"
+  },
+  {
+    "project_id": "ETP-031-PHI-9",
+    "project_name": "Permitting and Consenting to Offshore Wind Energy (part of Offshore Wind Development)",
+    "start_date": "6-Jul-23",
+    "end_date": "31-Jan-25"
+  },
+  {
+    "project_id": "ETP-035-PHI-10",
+    "project_name": "Marine Spatial Planning (part of Offshore Wind Development)",
+    "start_date": "13-Sep-23",
+    "end_date": "31-Jan-25"
+  },
+  {
+    "project_id": "ETP-006-PHI-2",
+    "project_name": "Upgrading Energy Regulations for the Energy Regulatory Commission of the Philippines (ERC) and Design",
+    "start_date": "21-Dec-21",
+    "end_date": "31-Jul-25"
+  },
+  {
+    "project_id": "ETP-044-PHI-12",
+    "project_name": "Enhancing the Spot Market to Attract Investments to Renewables",
+    "start_date": "18-Mar-24",
+    "end_date": "30-Sep-25"
+  },
+  {
+    "project_id": "ETP-048-PHI-13",
+    "project_name": "Accelerating the Clean Energy Scenario (ACES)",
+    "start_date": "22-Apr-24",
+    "end_date": "21-Oct-25"
+  },
+  {
+    "project_id": "ETP-052-PHI-15",
+    "project_name": "Enhancing Hydro Energy Storage Viability - De-risking Pump Storage Hydro Project Development",
+    "start_date": "1-Jul-24",
+    "end_date": "31-Dec-25"
+  },
+  {
+    "project_id": "ETP-059-PHI-16",
+    "project_name": "Formulation of the Bangsamoro Sustainable Energy Master Plan (BARRM)",
+    "start_date": "23-Aug-24",
+    "end_date": "16-Jan-26"
+  },
+  {
+    "project_id": "ETP-067-PHI-18",
+    "project_name": "Voluntary Renewable Energy Market (VREM)",
+    "start_date": "25-Oct-24",
+    "end_date": "30-Sep-25"
+  },
+  {
+    "project_id": "ETP-074-PHI-19",
+    "project_name": "Smart Grid Transformation in the Power Distribution Sector",
+    "start_date": "3-Feb-25",
+    "end_date": "31-May-26"
+  },
+  {
+    "project_id": "ETP-080-PHI-21",
+    "project_name": "Enabling Investments for the Domestic Energy Transition Supply Chain",
+    "start_date": "10-Apr-25",
+    "end_date": "12-Dec-25"
+  },
+  {
+    "project_id": "-",
+    "project_name": "Sustainable Energy Planning for Local Government Units",
+    "start_date": "-",
+    "end_date": "-"
+  },
+  {
+    "project_id": "-",
+    "project_name": "Just Transition Pathways for the Coal Mining Sector in the Philippines",
+    "start_date": "-",
+    "end_date": "-"
+  },
+  {
+    "project_id": "-",
+    "project_name": "Enhancing Regulations for Grid Governance",
+    "start_date": "-",
+    "end_date": "-"
+  },
+  {
+    "project_id": "-",
+    "project_name": "Enhancing Grid Reliability and Advancing Smart Grid through Microgrid Systems",
+    "start_date": "-",
+    "end_date": "-"
+  },
+  {
+    "project_id": "-",
+    "project_name": "Market Reforms of the Secondary Price Cap",
+    "start_date": "-",
+    "end_date": "-"
+  },
+  {
+    "project_id": "-",
+    "project_name": "OSW EVOSS Integration and Guidelines Development",
+    "start_date": "-",
+    "end_date": "-"
+  },
+  {
+    "project_id": "-",
+    "project_name": "Smart Grid Transformation Through Targeted DSM Program Design",
+    "start_date": "-",
+    "end_date": "-"
+  },
+  {
+    "project_id": "-",
+    "project_name": "Nationwide Energy Efficiency Practice Institutionalized",
+    "start_date": "-",
+    "end_date": "-"
+  },
+  {
+    "project_id": "-",
+    "project_name": "Renewable Energy Quota System",
+    "start_date": "-",
+    "end_date": "-"
+  },
+  {
+    "project_id": "-",
+    "project_name": "Just Transition In The Coal, Oil, And Gas Industries Toward Net-Zero By 2025 - Coal Industry",
+    "start_date": "-",
+    "end_date": "-"
+  },
+  {
+    "project_id": "-",
+    "project_name": "Development and Implementation of Sustainable Development Mechanism (SDM) Following Article 6.4",
+    "start_date": "-",
+    "end_date": "-"
+  },
+  {
+    "project_id": "ETP-001-VIE-1",
+    "project_name": "Review and Gap Analysis of the Existing Coal Abatement Scenarios",
+    "start_date": "19-Aug-21",
+    "end_date": "28-Jan-22"
+  },
+  {
+    "project_id": "ETP-015-VIE-2",
+    "project_name": "Consultancy Services for ETP of Wind Development",
+    "start_date": "18-Jul-22",
+    "end_date": "22-Aug-22"
+  },
+  {
+    "project_id": "ETP-016-VIE-3",
+    "project_name": "Roadmap for the Commission for Management of State Capital toward Net-Zero Emission in Energy State-Owned Enterprises (CMSC)",
+    "start_date": "18-Jul-22",
+    "end_date": "31-Jul-23"
+  },
+  {
+    "project_id": "ETP-018-VIE-4",
+    "project_name": "Impact Assessment of EU's Carbon Border Adjustment Mechanism (CBAM)",
+    "start_date": "16-Nov-22",
+    "end_date": "29-Mar-24"
+  },
+  {
+    "project_id": "ETP-020-VIE-5",
+    "project_name": "Legal Support to the Development of Power Generation Projects (EREA)",
+    "start_date": "5-Jan-23",
+    "end_date": "15-Dec-23"
+  },
+  {
+    "project_id": "ETP-021-VIE-6",
+    "project_name": "Diagnostic Study on Net-Zero for the Energy Sector",
+    "start_date": "9-Jan-23",
+    "end_date": "16-Oct-23"
+  },
+  {
+    "project_id": "ETP-023-VIE-7",
+    "project_name": "National Green Cooling Program",
+    "start_date": "24-Feb-23",
+    "end_date": "30-Jun-25"
+  },
+  {
+    "project_id": "ETP-027-VIE-9",
+    "project_name": "Development of 8 Key National Standards for E-vehicle Charging Infrastructure",
+    "start_date": "20-May-23",
+    "end_date": "31-Jan-25"
+  },
+  {
+    "project_id": "ETP-032-VIE-10",
+    "project_name": "Assessment of Country's Readiness and International Experience for Carbon Trade Exchange Design",
+    "start_date": "14-Jul-23",
+    "end_date": "31-Mar-24"
+  },
+  {
+    "project_id": "ETP-033-VIE-11",
+    "project_name": "Emission Trading System Piloting and Simulation",
+    "start_date": "15-Jul-23",
+    "end_date": "30-Mar-25"
+  },
+  {
+    "project_id": "ETP-034-VIE-12",
+    "project_name": "Vietnam Smart Grid Roadmap for Period up to Year 2030, with a Vision to 2045",
+    "start_date": "28-Aug-23",
+    "end_date": "31-May-24"
+  },
+  {
+    "project_id": "ETP-060-VIE-16",
+    "project_name": "Advisory Services to Support the Strengthening of Green Financing Landscape",
+    "start_date": "26-Aug-24",
+    "end_date": "31-Mar-25"
+  },
+  {
+    "project_id": "ETP-045-VIE-14",
+    "project_name": "Public Awareness Campaign On Energy Transition On Multimedia Channels",
+    "start_date": "20-Mar-24",
+    "end_date": "20-Jul-25"
+  },
+  {
+    "project_id": "ETP-026-VIE-8",
+    "project_name": "Promotion of Energy Efficiency in Supporting and Food Processing Industries",
+    "start_date": "16-May-23",
+    "end_date": "31-Jul-25"
+  },
+  {
+    "project_id": "ETP-043-VIE-13",
+    "project_name": "Development of National Standards for Offshore Wind Power (OWP)",
+    "start_date": "31-Jan-24",
+    "end_date": "30-Sep-25"
+  },
+  {
+    "project_id": "ETP-047-VIE-15",
+    "project_name": "Development of the National Standards for Battery Energy Storage System (BESS)",
+    "start_date": "16-Apr-24",
+    "end_date": "15-Oct-25"
+  },
+  {
+    "project_id": "ETP-064-VIE-17",
+    "project_name": "Technical Support for Development and Impacts Assessment of Carbon Credit and Allowance Governance Mechanism",
+    "start_date": "25-Sep-24",
+    "end_date": "30-Sep-25"
+  },
+  {
+    "project_id": "ETP-065-VIE-18",
+    "project_name": "Dedicated Policy Framework for Investment and Development of Sustainable Energy Infrastructure",
+    "start_date": "10-Oct-24",
+    "end_date": "31-Mar-26"
+  },
+  {
+    "project_id": "ETP-070-VIE-19",
+    "project_name": "Enhancing Batteries' Supply Chain for Electric Vehicles, Solar PVs, and Energy Storage Systems",
+    "start_date": "3-Dec-24",
+    "end_date": "2-Mar-26"
+  },
+  {
+    "project_id": "ETP-071-VIE-20",
+    "project_name": "Facilitating Private Sector's Access to and Engagement in Vietnam's Energy Sector",
+    "start_date": "6-Dec-24",
+    "end_date": "15-Mar-26"
+  },
+  {
+    "project_id": "ETP-073-VIE-21",
+    "project_name": "Vietnam Carbon Trade Exchange - Pilot Preparation with Ministry of Finance",
+    "start_date": "2-Jan-25",
+    "end_date": "1-Dec-25"
+  },
+  {
+    "project_id": "ETP-075-VIE-22",
+    "project_name": "Technical Support for the Design and Pilot of the voluntary carbon labelling scheme",
+    "start_date": "5-Feb-25",
+    "end_date": "30-Jun-26"
+  },
+  {
+    "project_id": "ETP-078-VIE-23",
+    "project_name": "Pilot Energy Investment and Planning for Industrial Parks and Economic Zones Initial Study for Thang Long II Industrial Park",
+    "start_date": "25-Mar-25",
+    "end_date": "24-Sep-25"
+  },
+  {
+    "project_id": "ETP-084-VIE-24",
+    "project_name": "Preliminary Study for Development of Clean Energy Complex in Ninh Thuan Province",
+    "start_date": "18-Jun-25",
+    "end_date": "30-Nov-25"
+  },
+  {
+    "project_id": "-",
+    "project_name": "Provincial Energy Strategies and Investment Frameworks for Industrial Parks in Vietnam",
+    "start_date": "-",
+    "end_date": "-"
+  },
+  {
+    "project_id": "-",
+    "project_name": "Assessment of Potential and Roadmap for Deployment of Floating Solar in Irrigation and Hydro Power Reservoirs in Vietnam",
+    "start_date": "-",
+    "end_date": "-"
+  },
+  {
+    "project_id": "-",
+    "project_name": "Paris Agreement Article 6 Operationalization and Carbon Credit Offsetting Standards for the Vietnam's ETS",
+    "start_date": "-",
+    "end_date": "-"
+  },
+  {
+    "project_id": "-",
+    "project_name": "Assessment on Energy Efficiency Policies and Recommendations for Promotion of Energy Transition in Vietnam",
+    "start_date": "-",
+    "end_date": "-"
+  },
+  {
+    "project_id": "ETP-003-REG-1",
+    "project_name": "Diagnostic Review of and Analysis of Energy Efficiency Development in SEA",
+    "start_date": "15-Nov-21",
+    "end_date": "31-Jan-22"
+  },
+  {
+    "project_id": "ETP-004-REG-2",
+    "project_name": "Energy Transition Round Table",
+    "start_date": "6-Dec-21",
+    "end_date": "31-Dec-23"
+  },
+  {
+    "project_id": "ETP-019-REG-3",
+    "project_name": "Donor Assistance Mapping on Energy Transition in SEA",
+    "start_date": "1-Dec-22",
+    "end_date": "30-Nov-23"
+  },
+  {
+    "project_id": "ETP-028-REG-4",
+    "project_name": "Diagnostic for Competitive Arrangements for Energy Transition (DCAT)",
+    "start_date": "25-May-23",
+    "end_date": "5-May-24"
+  },
+  {
+    "project_id": "ETP-029-REG-5",
+    "project_name": "Just Coal Transition Forum (Technical Support)",
+    "start_date": "2-Jun-23",
+    "end_date": "15-Feb-25"
+  },
+  {
+    "project_id": "ETP-038-REG-6",
+    "project_name": "ASEAN Power Grid Advancement Program (APG-AP) - Output 2 Roadmap Development",
+    "start_date": "21-Nov-23",
+    "end_date": "15-Sep-24"
+  },
+  {
+    "project_id": "ETP-046-REG-8",
+    "project_name": "Strengthening Regional Cooperation for the Implementation of the ASEAN Power Grid Advancement Programme (APG-AP) towards accelerating energy transition",
+    "start_date": "25-Mar-24",
+    "end_date": "30-Jun-25"
+  },
+  {
+    "project_id": "ETP-EU-APG-03",
+    "project_name": "A Study to Develop A Proposed Methodology and Guidelines for ASEAN-wide Integrated Resource and Resilience Planning (IRRP)",
+    "start_date": "25-Oct-24",
+    "end_date": "31-Jul-25"
+  },
+  {
+    "project_id": "ETP-042-REG-7",
+    "project_name": "TRANSEND - Provision of Advisory Services for a Coal Phase Out Initiative",
+    "start_date": "23-Jan-24",
+    "end_date": "15-Oct-25"
+  },
+  {
+    "project_id": "ETP-EU-APG-01",
+    "project_name": "Studies on the Minimum Requirements for Multilateral Power Market and A Strategy to Establish A Multilateral Power Trade in ASEAN",
+    "start_date": "15-Oct-24",
+    "end_date": "30-Sep-25"
+  },
+  {
+    "project_id": "ETP-EU-APG-02",
+    "project_name": "A Study on the Proposed Harmonisation of Grid Codes and Minimum Operational Technical Standards for Interconnections under the ASEAN Power Grid",
+    "start_date": "25-Oct-24",
+    "end_date": "15-Oct-25"
+  },
+  {
+    "project_id": "ETP-068-REG-9",
+    "project_name": "Financial Advisory Services for the Early Retirement of a Coal-Fired Power Plant",
+    "start_date": "19-Nov-24",
+    "end_date": "18-May-26"
+  },
+  {
+    "project_id": "ETP-069-REG-10",
+    "project_name": "Technical Advisory Services for the Early Retirement of a Coal-Fired Power Plant",
+    "start_date": "28-Nov-24",
+    "end_date": "15-Jan-26"
+  },
+  {
+    "project_id": "ETP-072-REG-11",
+    "project_name": "Twinning Arrangements for Decarbonization in SEA",
+    "start_date": "9-Jun-25",
+    "end_date": "30-Jun-26"
+  },
+  {
+    "project_id": "ETP-081-REG-12",
+    "project_name": "Energy Transition Thematic Report 1 - Southeast Asia Energy Transition Stocktake",
+    "start_date": "1-May-25",
+    "end_date": "30-Oct-25"
+  },
+  {
+    "project_id": "ETP-082-REG-13",
+    "project_name": "Sharing of Perspectives to Advance Regional Knowledge on Energy Transition in Southeast Asia (SPARK) - Finance and Investment",
+    "start_date": "6-May-25",
+    "end_date": "31-Jan-26"
+  },
+  {
+    "project_id": "ETP-083-REG-14",
+    "project_name": "Technical Assistance for the Establishment of the ASEAN School of Regulation (phase 1)",
+    "start_date": "9-May-25",
+    "end_date": "9-Dec-25"
+  },
+  {
+    "project_id": "-",
+    "project_name": "Energy Transition Thematic Report 2 - Accelerating a Just Coal Transition in Asia and the Pacific",
+    "start_date": "-",
+    "end_date": "-"
+  },
+  {
+    "project_id": "-",
+    "project_name": "Supporting Regional Energy Connectivity through the ASEAN Power Grid Initiative towards Accelerating Energy Transition",
+    "start_date": "-",
+    "end_date": "-"
+  },
+  {
+    "project_id": "-",
+    "project_name": "Energy Transition Thematic Report 3 - Workforce Development",
+    "start_date": "-",
+    "end_date": "-"
+  },
+  {
+    "project_id": "-",
+    "project_name": "Sharing of Perspectives to Advance Regional Knowledge on Energy Transition in Southeast Asia (SPARK) - additional topics to be confirmed",
+    "start_date": "-",
+    "end_date": "-"
+  },
+  {
+    "project_id": "-",
+    "project_name": "Technical Assistance for the Establishment of the ASEAN School of Regulation (phases 2 & 3)",
+    "start_date": "-",
+    "end_date": "-"
+  },
+  {
+    "project_id": "-",
+    "project_name": "Supply Chain of Critical Minerals for Energy Transition in SEA",
+    "start_date": "-",
+    "end_date": "-"
+  },
+  {
+    "project_id": "-",
+    "project_name": "PSA TAF: RE-BESS Hybrid in Philippines",
+    "start_date": "-",
+    "end_date": "-"
+  },
+  {
+    "project_id": "-",
+    "project_name": "PSA TAF: RE-BESS Hybrid in Vietnam",
+    "start_date": "-",
+    "end_date": "-"
+  },
+  {
+    "project_id": "-",
+    "project_name": "PSA TAF: Reconductoring for Vietnam, Indonesia, and Philippines",
+    "start_date": "-",
+    "end_date": "-"
+  },
+  {
+    "project_id": "ETP-041-INO-12",
+    "project_name": "Supporting JETP Secretariat",
+    "start_date": "8-Jan-2024",
+    "end_date": "30-Oct-2025"
+  },
+  {
+    "project_id": "ETP-056-INO-18",
+    "project_name": "Financial Expertise for PT. SMI (Sarana Multi Infrastruktur (Persero), a Special Mission Vehicle under the Ministry of Finance)",
+    "start_date": "22-Jul-2024",
+    "end_date": "21-Jul-2026"
+  },
+  {
+    "project_id": "ETP-066-PHI-17",
+    "project_name": "NREP Update",
+    "start_date": "25-Oct-2024",
+    "end_date": "24-Oct-2025"
+  },
+  {
+    "project_id": "ETP-078-PHI-20",
+    "project_name": "Streamlining Regulations to Support Energy Transition",
+    "start_date": "1-Mar-2025",
+    "end_date": "28-Feb-2026"
+  },
+  {
+    "project_id": "ETP-022-PHI-7",
+    "project_name": "Support to Renewable Energy Procurement Mechanisms (including GEAP)",
+    "start_date": "07-Feb-2023",
+    "end_date": "31-Dec-2024"
+  },
+  {
+    "project_id": "ETP-072-REG-11",
+    "project_name": "Existing project: Twinning Arrangements for Decarbonization in Southeast Asia",
+    "start_date": "13-Dec-2024",
+    "end_date": "12-Dec-2025"
+  },
+  {
+    "project_id": "ETP-037-INO-10",
+    "project_name": "Integrated Eco-friendly Public Transport",
+    "start_date": "30-Oct-2023",
+    "end_date": "29-Oct-2024"
+  },
+  {
+    "project_id": "ETP-061-INO-21",
+    "project_name": "Existing project: Strengthening Implementation of Government Regulation on Energy Conservation in Indonesia",
+    "start_date": "19-Mar-2024",
+    "end_date": "12-May-2025"
+  },
+  {
+    "project_id": "ETP-062-INO-22",
+    "project_name": "JETP Power System Analysis",
+    "start_date": "27-Aug-2024",
+    "end_date": "26-Aug-2025"
+  },
+  {
+    "project_id": "ETP-040-PHI-11",
+    "project_name": "Energy Regulation Development for RE Integration",
+    "start_date": "18-Dec-2023",
+    "end_date": "17-Dec-2024"
+  },
+  {
+    "project_id": "ETP-050-PHI-14",
+    "project_name": "Legal Assessment for Preparing the Carbon Pricing Instrument for the Philippines",
+    "start_date": "1-Jul-2024",
+    "end_date": "30-Jun-2025"
+  }
+]
