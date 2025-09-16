@@ -91,17 +91,26 @@ def setup_logging():
     """Setup logging configuration."""
     logger.remove()  # Remove default handler
     
-    # Add console handler
-    logger.add(
-        sink=lambda msg: print(msg, end=""),
-        level=settings.log_level,
-        format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>"
-    )
+    # Add console handler (only if not in quiet mode)
+    if not settings.quiet_mode:
+        logger.add(
+            sink=lambda msg: print(msg, end=""),
+            level=settings.log_level,
+            format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>"
+        )
+    else:
+        # Quiet mode: only show WARNING and ERROR on console
+        logger.add(
+            sink=lambda msg: print(msg, end=""),
+            level="WARNING",
+            format="<red>{time:HH:mm:ss}</red> | <level>{level: <8}</level> | <level>{message}</level>"
+        )
     
-    # Add file handler
+    # Add file handler (always enabled for debugging)
+    log_level = settings.log_level if settings.verbose_logging else "WARNING"
     logger.add(
         sink=settings.log_dir / "rbmf_processor.log",
-        level=settings.log_level,
+        level=log_level,
         format="{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {name}:{function}:{line} - {message}",
         rotation="10 MB",
         retention="7 days"
@@ -111,8 +120,7 @@ def setup_logging():
 @click.group()
 def cli():
     """RBMF Data Processor - Download and process Google Drive data."""
-    setup_logging()
-    logger.info("RBMF Data Processor started")
+    pass
 
 
 @cli.command()
@@ -207,14 +215,26 @@ def process(data_dir: Path, output_file: str):
               help='Apply filtering to RBMF tab based on Strategic Outcome + Indicator name groups')
 @click.option('--report-file', default='transformation_report.json', 
               help='Output report file name')
-def transform(data_dir: Path, folders: tuple, interactive: bool, steps: bool, filter: bool, report_file: str):
+@click.option('--quiet', is_flag=True, 
+              help='Quiet mode - minimal console output for better performance')
+def transform(data_dir: Path, folders: tuple, interactive: bool, steps: bool, filter: bool, report_file: str, quiet: bool):
     """Transform RBMF data from quarterly to half-yearly format.
     
     Default: Creates Instructions + RBMF tabs only (efficient for production)
     --steps: Creates Instructions + RBMF_1 + RBMF_2 + RBMF tabs (for verification)
     --folders: Process specific folders (can be used multiple times)
     --interactive: Show interactive folder selection menu
+    --filter: Apply filtering to RBMF tab based on Strategic Outcome + Indicator name groups
+    --quiet: Minimal console output for better performance
     """
+    # Enable quiet mode if requested
+    if quiet:
+        settings.quiet_mode = True
+        settings.verbose_logging = False
+    
+    # Setup logging after quiet mode is configured
+    setup_logging()
+    
     try:
         if steps:
             mode_desc = "with intermediate steps"

@@ -22,6 +22,10 @@ class Settings(BaseSettings):
     data_dir: Path = Field(default=Path("/app/data"), env="DATA_DIR")
     log_dir: Path = Field(default=Path("/app/logs"), env="LOG_DIR")
     
+    # Performance Configuration
+    quiet_mode: bool = Field(default=False, env="QUIET_MODE")  # Reduce console output
+    verbose_logging: bool = Field(default=True, env="VERBOSE_LOGGING")  # Detailed file logging
+    
     # Processing Configuration
     batch_size: int = Field(default=10, env="BATCH_SIZE")
     max_retries: int = Field(default=3, env="MAX_RETRIES")
