@@ -1717,11 +1717,18 @@ class RBMFTransformer:
     def _apply_rbmf_filtering(self, rbmf_final_df: pd.DataFrame) -> pd.DataFrame:
         """Apply filtering logic to RBMF_Final data based on Strategic Outcome + Indicator name groups.
         
+        New logic:
+        1) Group data by Strategic Outcome + Indicator name
+        2) For each group, check if any rows have Periodical Result > 0, keep them unchanged
+        3) For rows with Periodical Result == 0, set Periodical Target empty
+        4) If all rows have Periodical Result = 0, keep the last row (most recent) unchanged, 
+           set Periodical Target empty for other rows
+        
         Args:
             rbmf_final_df: DataFrame with RBMF_Final data
             
         Returns:
-            Filtered DataFrame
+            Modified DataFrame with Periodical Target cleared for zero-result rows
         """
         try:
             if rbmf_final_df.empty:
@@ -1735,12 +1742,18 @@ class RBMFTransformer:
                 logger.warning(f"Missing required columns for filtering: {missing_columns}")
                 return rbmf_final_df
             
-            logger.info("Starting RBMF filtering process")
+            # Check if Periodical Target column exists
+            if 'Periodical Target' not in rbmf_final_df.columns:
+                logger.warning("Periodical Target column not found, cannot apply new filtering logic")
+                return rbmf_final_df
+            
+            logger.info("Starting RBMF filtering process (new logic: clear Periodical Target for zero results)")
+            
+            # Create a copy to avoid modifying original data
+            result_df = rbmf_final_df.copy()
             
             # Group by Strategic Outcome + Indicator name
-            grouped = rbmf_final_df.groupby(['Strategic Outcome', 'Indicator name'])
-            
-            filtered_rows = []
+            grouped = result_df.groupby(['Strategic Outcome', 'Indicator name'])
             
             for (strategic_outcome, indicator_name), group_df in grouped:
                 logger.debug(f"Processing group: {strategic_outcome} + {indicator_name} ({len(group_df)} rows)")
@@ -1749,33 +1762,48 @@ class RBMFTransformer:
                 group_df = group_df.copy()
                 group_df['Periodical Result'] = pd.to_numeric(group_df['Periodical Result'], errors='coerce')
                 
-                # Priority 1: Check if any row has Periodical Result > 0
-                rows_with_target = group_df[group_df['Periodical Result'] > 0]
+                # Check if any row has Periodical Result > 0
+                rows_with_results = group_df[group_df['Periodical Result'] > 0]
                 
-                if not rows_with_target.empty:
-                    # Keep only rows with Periodical Result > 0
-                    filtered_rows.append(rows_with_target)
-                    logger.debug(f"  → Kept {len(rows_with_target)} rows with Periodical Result > 0")
+                if not rows_with_results.empty:
+                    # Step 2: Keep rows with Periodical Result > 0 unchanged
+                    logger.debug(f"  → Group has {len(rows_with_results)} rows with Periodical Result > 0, keeping unchanged")
+                    
+                    # Step 3: Set Periodical Target empty for rows with Periodical Result == 0
+                    zero_result_indices = group_df[group_df['Periodical Result'] == 0].index
+                    if not zero_result_indices.empty:
+                        result_df.loc[zero_result_indices, 'Periodical Target'] = None
+                        logger.debug(f"  → Cleared Periodical Target for {len(zero_result_indices)} rows with Periodical Result = 0")
+                    
+                    # Ensure positive result rows are kept unchanged (double-check)
+                    positive_result_indices = group_df[group_df['Periodical Result'] > 0].index
+                    logger.debug(f"  → Verified {len(positive_result_indices)} rows with Periodical Result > 0 are kept unchanged")
                 else:
-                    # Priority 2: All rows have Periodical Result = 0, keep most recent Target Reporting Cycle
+                    # Step 4: All rows have Periodical Result = 0
+                    logger.debug(f"  → All {len(group_df)} rows have Periodical Result = 0")
+                    
+                    # Find the most recent Target Reporting Cycle
                     most_recent_row = self._find_most_recent_reporting_cycle(group_df)
                     if most_recent_row is not None:
-                        filtered_rows.append(most_recent_row)
-                        logger.debug(f"  → Kept 1 row with most recent Target Reporting Cycle: {most_recent_row.iloc[0]['Target Reporting Cycle']}")
+                        most_recent_index = most_recent_row.index[0]
+                        other_indices = group_df.index[group_df.index != most_recent_index]
+                        
+                        # Keep the most recent row completely unchanged (including Periodical Target)
+                        logger.debug(f"  → Keeping most recent row completely unchanged: {group_df.loc[most_recent_index, 'Target Reporting Cycle']} (Periodical Target preserved)")
+                        
+                        # Set Periodical Target empty for other rows only
+                        if not other_indices.empty:
+                            result_df.loc[other_indices, 'Periodical Target'] = None
+                            logger.debug(f"  → Cleared Periodical Target for {len(other_indices)} other rows (most recent row kept unchanged)")
                     else:
                         logger.warning(f"  → No valid row found for group: {strategic_outcome} + {indicator_name}")
             
-            if filtered_rows:
-                # Concatenate while preserving original relative order
-                result_df = pd.concat(filtered_rows, ignore_index=True)
-                # Ensure stable order by source appearance: use original index if present
-                if '__source_row_index__' in rbmf_final_df.columns:
-                    result_df = result_df.sort_values(by='__source_row_index__', kind='stable').reset_index(drop=True)
-                logger.info(f"✓ RBMF filtering completed: {len(rbmf_final_df)} → {len(result_df)} rows")
-                return result_df
-            else:
-                logger.warning("No rows remained after filtering")
-                return pd.DataFrame()
+            # Ensure stable order by source appearance: use original index if present
+            if '__source_row_index__' in result_df.columns:
+                result_df = result_df.sort_values(by='__source_row_index__', kind='stable').reset_index(drop=True)
+            
+            logger.info(f"✓ RBMF filtering completed: {len(rbmf_final_df)} rows processed (Periodical Target cleared for zero results)")
+            return result_df
                 
         except Exception as e:
             logger.error(f"Error applying RBMF filtering: {e}")
@@ -1857,29 +1885,6 @@ class RBMFTransformer:
                 except Exception:
                     pass
 
-            # Set specific column widths for Overview tab (A-H)
-            # A=181px, B=127px, C=127px, D=100px, E=222px, F=222px, G=222px, H=222px
-            try:
-                from openpyxl.utils import get_column_letter
-                # Convert Google Sheets pixels to Excel units: ColumnWidth = 1 + (Pixels - 12) / 7
-                def pixels_to_excel_units(pixels):
-                    return 1 + (pixels - 12) / 7
-                
-                width_map = {
-                    'A': pixels_to_excel_units(181),  # ~25.1
-                    'B': pixels_to_excel_units(127),  # ~17.4
-                    'C': pixels_to_excel_units(127),  # ~17.4
-                    'D': pixels_to_excel_units(100),  # ~13.6
-                    'E': pixels_to_excel_units(222),  # ~31.0
-                    'F': pixels_to_excel_units(222),  # ~31.0
-                    'G': pixels_to_excel_units(222),  # ~31.0
-                    'H': pixels_to_excel_units(222),  # ~31.0
-                }
-                for col_letter, width in width_map.items():
-                    target_ws.column_dimensions[col_letter].width = width
-            except Exception as e:
-                logger.warning(f"Failed to set specific column widths: {e}")
-                pass
 
             # Ensure every visible column up to template max_column has an explicit width
             try:
@@ -1925,6 +1930,25 @@ class RBMFTransformer:
                 logger.warning(f"Failed to set auto-fit row height: {e}")
                 pass
             
+            # Fix text wrapping for merged cell F2:H2 (dropdown options)
+            try:
+                from openpyxl.styles import Alignment
+                cell_f2 = target_ws['F2']
+                # Create new alignment object to avoid immutable style error
+                new_alignment = Alignment(
+                    horizontal=cell_f2.alignment.horizontal if cell_f2.alignment else None,
+                    vertical=cell_f2.alignment.vertical if cell_f2.alignment else None,
+                    text_rotation=cell_f2.alignment.text_rotation if cell_f2.alignment else None,
+                    wrap_text=False,  # Disable text wrapping to prevent line breaks
+                    shrink_to_fit=cell_f2.alignment.shrink_to_fit if cell_f2.alignment else None,
+                    indent=cell_f2.alignment.indent if cell_f2.alignment else None
+                )
+                cell_f2.alignment = new_alignment
+                logger.info("✓ Disabled text wrapping for F2:H2 dropdown cell")
+            except Exception as e:
+                logger.warning(f"Failed to fix text wrapping for F2:H2: {e}")
+                pass
+            
             # Copy cell formatting for all cells (including empty ones)
             for row in source_ws.iter_rows():
                 for cell in row:
@@ -1947,6 +1971,30 @@ class RBMFTransformer:
             # Copy merged cells
             for merged_range in source_ws.merged_cells.ranges:
                 target_ws.merge_cells(str(merged_range))
+            
+            # Set specific column widths for Overview tab (A-H) AFTER merged cells
+            # A=181px, B=127px, C=127px, D=100px, E=222px, F=300px, G=300px, H=300px
+            try:
+                from openpyxl.utils import get_column_letter
+                # Convert Google Sheets pixels to Excel units: ColumnWidth = 1 + (Pixels - 12) / 7
+                def pixels_to_excel_units(pixels):
+                    return 1 + (pixels - 12) / 7
+                
+                width_map = {
+                    'A': pixels_to_excel_units(181),  # ~25.1
+                    'B': pixels_to_excel_units(127),  # ~17.4
+                    'C': pixels_to_excel_units(127),  # ~17.4
+                    'D': pixels_to_excel_units(100),  # ~13.6
+                    'E': pixels_to_excel_units(222),  # ~31.0
+                    'F': pixels_to_excel_units(300),  # ~42.1 (restored to original)
+                    'G': pixels_to_excel_units(300),  # ~42.1 (restored to original)
+                    'H': pixels_to_excel_units(400),  # ~56.4 (kept wide for F2:H2 dropdown)
+                }
+                for col_letter, width in width_map.items():
+                    target_ws.column_dimensions[col_letter].width = width
+            except Exception as e:
+                logger.warning(f"Failed to set specific column widths: {e}")
+                pass
 
             # Copy freeze panes and basic sheet view options
             try:
@@ -1980,8 +2028,39 @@ class RBMFTransformer:
                     # Recreate DataValidations container on target and append copies
                     target_ws.data_validations = type(source_ws.data_validations)()
                     for dv in source_ws.data_validations.dataValidation:
-                        target_ws.data_validations.append(_copy(dv))
-            except Exception:
+                        # Fix F2 dropdown formula to handle commas in option text
+                        if dv.sqref and 'F2' in str(dv.sqref) and dv.type == 'list' and dv.formula1:
+                            # Parse the original formula and fix comma handling
+                            original_formula = dv.formula1
+                            if original_formula.startswith('"') and original_formula.endswith('"'):
+                                # Remove outer quotes
+                                content = original_formula[1:-1]
+                                
+                                # Define the correct options
+                                correct_options = [
+                                    "SO1 - Policy alignment with climate commitments",
+                                    "SO2 - De-risking Investments on RE, EE and Fossil Fuel Phasedown",
+                                    "SO3 - Sustainable and Resilient Infrastructure",
+                                    "SO4 - Just Transition"
+                                ]
+                                
+                                # Create properly formatted formula with quoted options
+                                fixed_formula = ','.join(f'"{opt}"' for opt in correct_options)
+                                
+                                # Create a copy of the data validation with fixed formula
+                                fixed_dv = _copy(dv)
+                                fixed_dv.formula1 = fixed_formula
+                                target_ws.data_validations.append(fixed_dv)
+                                
+                                logger.info(f"✓ Fixed F2 dropdown formula to handle commas properly")
+                            else:
+                                # Use original formula if not in expected format
+                                target_ws.data_validations.append(_copy(dv))
+                        else:
+                            # Copy other data validations as-is
+                            target_ws.data_validations.append(_copy(dv))
+            except Exception as e:
+                logger.warning(f"Failed to copy data validations: {e}")
                 pass
                 
             logger.info("✓ Worksheet formatting copied successfully")
