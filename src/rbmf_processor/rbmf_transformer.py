@@ -1808,7 +1808,7 @@ class RBMFTransformer:
         except Exception as e:
             logger.error(f"Error applying RBMF filtering: {e}")
             return rbmf_final_df
-    
+
     def _find_most_recent_reporting_cycle(self, group_df: pd.DataFrame) -> pd.DataFrame:
         """Find the row with the most recent Target Reporting Cycle.
         

@@ -1,0 +1,197 @@
+[
+  {
+    "strategic_outcome": "SO1 - Policy alignment with climate commitments",
+    "output_indicator": {
+      "indicator_id": "OP 1.1a",
+      "category": "Output",
+      "name": "Number of research products and policy recommendations delivered to enhance national and regional energy plans"
+    },
+    "outcome_indicator": {
+      "indicator_id": "OC 1.1a",
+      "category": "Outcome",
+      "name": "Number of national and regional energy plans reflecting an ambition towards increasing the share of RE, improving EE, and phasing down fossil fuels"
+    }
+  },
+  {
+    "strategic_outcome": "SO1 - Policy alignment with climate commitments",
+    "output_indicator": {
+      "indicator_id": "OP 1.1b",
+      "category": "Output",
+      "name": "Number of policy and regulatory recommendations promoting RE, EE, and fossil fuel phasedown presented to the government"
+    },
+    "outcome_indicator": {
+      "indicator_id": "OC 1.1b",
+      "category": "Outcome",
+      "name": "Number of policy and regulatory recommendations promoting RE, EE, and fossil fuel phasedown adopted by government entities"
+    }
+  },
+  {
+    "strategic_outcome": "SO1 - Policy alignment with climate commitments",
+    "output_indicator": {
+      "indicator_id": "OP 1.2",
+      "category": "Output",
+      "name": "Number of policy recommendations, plans, roadmaps to create new markets, operationalize or adjust existing markets in favor of RE and EE presented to government entities"
+    },
+    "outcome_indicator": {
+      "indicator_id": "OC 1.2",
+      "category": "Outcome",
+      "name": "Number of policy recommendations, plans, roadmaps to create new markets, operationalize or adjust existing markets in favor of RE and EE adopted by government entities"
+    }
+  },
+  {
+    "strategic_outcome": "SO1 - Policy alignment with climate commitments",
+    "output_indicator": {
+      "indicator_id": "OP 1.3a",
+      "category": "Output",
+      "name": "Number of national and regional coordinating mechanisms, technical working groups on RE, EE, and fossil fuel phasedown established and/or supported"
+    },
+    "outcome_indicator": {
+      "indicator_id": "OP 1.3b",
+      "category": "Output",
+      "name": "Number of dialogues and meetings organized or supported for the technical working groups and other national coordinating mechanisms"
+    }
+  },
+  {
+    "strategic_outcome": "SO2 - De-risking Energy Efficiency and Renewable Energy Investments",
+    "output_indicator": {
+      "indicator_id": "OP 2.1",
+      "category": "Output",
+      "name": "Number of new regulations, recommendations, and de-risking strategies proposed to reduce investment risks in RE, EE, grids, and fossil fuel phasedown"
+    },
+    "outcome_indicator": {
+      "indicator_id": "OC 2.1",
+      "category": "Outcome",
+      "name": "Number of new regulations, recommendations, and de-risking strategies adopted to reduce investment risks to RE, EE, grids, and fossil fuel phasedown"
+    }
+  },
+  {
+    "strategic_outcome": "SO2 - De-risking Energy Efficiency and Renewable Energy Investments",
+    "output_indicator": {
+      "indicator_id": "OP 2.2",
+      "category": "Output",
+      "name": "Number of investment roadmaps, scoping studies, market assessment, and other pre-development analyses and tools completed for RE, EE, fossil fuel phasedown, and grid projects"
+    },
+    "outcome_indicator": {
+      "indicator_id": "OC 2.2",
+      "category": "Outcome",
+      "name": "Value of investments on RE, EE, and grid projects facilitated"
+    }
+  },
+  {
+    "strategic_outcome": "SO2 - De-risking Energy Efficiency and Renewable Energy Investments",
+    "output_indicator": {
+      "indicator_id": "OP 2.3",
+      "category": "Output",
+      "name": "Number of studies, case studies, recommendations developed to promote adoption of innovative RE and EE business models"
+    },
+    "outcome_indicator": {
+      "indicator_id": "OC 2.3",
+      "category": "Outcome",
+      "name": "Number of RE and EE business models adopted"
+    }
+  },
+  {
+    "strategic_outcome": "SO2 - De-risking Energy Efficiency and Renewable Energy Investments",
+    "output_indicator": {
+      "indicator_id": "OP 2.4",
+      "category": "Output",
+      "name": "Number of studies, recommendations, investment plans, roadmaps for developing national and regional supply chains presented to government entities and regional bodies"
+    },
+    "outcome_indicator": {
+      "indicator_id": "OC 2.4",
+      "category": "Outcome",
+      "name": "Number of studies, recommendations, investment plans, roadmaps for developing national and regional supply chains adopted"
+    }
+  },
+  {
+    "strategic_outcome": "SO3 - Sustainable and Resilient Infrastructure",
+    "output_indicator": {
+      "indicator_id": "OP 3.1",
+      "category": "Output",
+      "name": "Number of grid simulations, regulatory and technical recommendations, smart grid roadmaps, and tools presented to the government and/or grid operators to support smart grid transformation"
+    },
+    "outcome_indicator": {
+      "indicator_id": "OC 3.1",
+      "category": "Outcome",
+      "name": "Number of grid simulations, regulatory and technical recommendations, smart grid roadmaps, and tools adopted by the government and/or grid operators to support smart grid transformation"
+    }
+  },
+  {
+    "strategic_outcome": "SO3 - Sustainable and Resilient Infrastructure",
+    "output_indicator": {
+      "indicator_id": "OP 3.2",
+      "category": "Output",
+      "name": "Number of grid standards, codes, reliability and flexibility solutions developed"
+    },
+    "outcome_indicator": {
+      "indicator_id": "OC 3.2",
+      "category": "Outcome",
+      "name": "Number of grid standards, codes, reliability and flexibility solutions adoped"
+    }
+  },
+  {
+    "strategic_outcome": "SO3 - Sustainable and Resilient Infrastructure",
+    "output_indicator": {
+      "indicator_id": "OP 3.3a",
+      "category": "Output",
+      "name": "Number of policy, regulatory and technical recommendations, plans, roadmaps to open markets for cross-border power trading presented to national governments and/or regional bodies"
+    },
+    "outcome_indicator": {
+      "indicator_id": "OC 3.3a",
+      "category": "Outcome",
+      "name": "Number of policy, regulatory and technical recommendations, plans, roadmaps to open cross-border power trading adopted by national governments and/or regional bodies"
+    }
+  },
+  {
+    "strategic_outcome": "SO3 - Sustainable and Resilient Infrastructure",
+    "output_indicator": {
+      "indicator_id": "OP 3.3b",
+      "category": "Output",
+      "name": "Number of multilateral dialogues on the regional power grid supported"
+    },
+    "outcome_indicator": {
+      "indicator_id": "OC 3.3b",
+      "category": "Outcome",
+      "name": "Number of cross-border power grid interconnections initiated"
+    }
+  },
+  {
+    "strategic_outcome": "SO4 - Just Transition",
+    "output_indicator": {
+      "indicator_id": "OP 4.1",
+      "category": "Output",
+      "name": "Number of institutional frameworks, just transition plans, workforce reskilling plans, and recommendations on just transition developed"
+    },
+    "outcome_indicator": {
+      "indicator_id": "OC 4.1",
+      "category": "Outcome",
+      "name": "Number of institutional frameworks, just transition plans, workforce reskilling plans, and recommendations on just transition adopted"
+    }
+  },
+  {
+    "strategic_outcome": "SO4 - Just Transition",
+    "output_indicator": {
+      "indicator_id": "OP 4.2",
+      "category": "Output",
+      "name": "Number of Gender Equality frameworks, action plans, and/or recommendations developed"
+    },
+    "outcome_indicator": {
+      "indicator_id": "OC 4.2",
+      "category": "Outcome",
+      "name": "Number of Gender Equality frameworks, action plans, and/or recommendations adopted"
+    }
+  },
+  {
+    "strategic_outcome": "SO4 - Just Transition",
+    "output_indicator": {
+      "indicator_id": "OP 4.3",
+      "category": "Output",
+      "name": "Number of RE and EE curriculums developed"
+    },
+    "outcome_indicator": {
+      "indicator_id": "OC 4.3",
+      "category": "Outcome",
+      "name": "Number of RE and EE curriculums implemented or institutionalized"
+    }
+  }
+]
